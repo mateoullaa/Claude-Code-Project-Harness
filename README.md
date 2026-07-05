@@ -1,8 +1,9 @@
 # Claude Code Project Harness
 
-A single-file initialization prompt that turns Claude Code from a code editor into a
-structured, self-improving development agent — with a real verification loop, not just
-a longer system prompt.
+A Claude Code **Skill** that turns a blank folder into a structured, self-improving
+development agent — with a real verification loop, not just a longer system prompt.
+
+Install once. Run `/init-harness` in any new project, forever.
 
 ## The problem this solves
 
@@ -15,6 +16,21 @@ Left alone, an agentic coding tool degrades in two predictable ways:
 
 This harness addresses both with one mechanism: **deterministic execution + a mandatory
 review gate**, not more prompting.
+
+## Why this is a Skill, not a prompt you paste
+
+Claude Code Skills (`~/.claude/skills/<name>/SKILL.md`) are the current, native way to
+package reusable agent behavior — installed once, invoked with `/name`, loaded on demand
+instead of pasted every time. This repo ships the harness *as* one, not as a block of text
+to copy into a fresh chat:
+
+- **Install scope matches the use case.** This is meant to be a personal default for every
+  new project, so it's installed at the personal level (`~/.claude/skills/`), not
+  re-copied per repo.
+- **Progressive disclosure.** Claude Code reads the name and description at session start;
+  the full body only loads when `/init-harness` actually runs — no wasted context on
+  projects that don't need it.
+- **One command, not one paste.** `/init-harness` in an empty folder. That's the interface.
 
 ## How it works
 
@@ -34,20 +50,43 @@ review gate**, not more prompting.
   (via [MarkItDown](https://github.com/microsoft/markitdown)) are checked for and applied
   only when a task actually needs them, never preloaded.
 
+## Installation
+
+```bash
+git clone https://github.com/mateoullaa/Claude-Code-Project-Harness.git
+mkdir -p ~/.claude/skills
+cp -r Claude-Code-Project-Harness/init-harness ~/.claude/skills/init-harness
+```
+
+That's it — `/init-harness` is now available in every Claude Code session, in any project,
+on this machine.
+
 ## Usage
 
-1. Open a new, empty folder in VS Code with the Claude Code extension installed.
-2. Paste the entire contents of `UNIVERSAL_PROMPT.md` as your first message.
+1. Open a new, empty project folder and start Claude Code (`claude`).
+2. Run `/init-harness` (optionally with a one-line project description as an argument).
 3. Answer the intake questions. No file is created until you approve the proposed structure.
+
+## Repository structure
+
+```
+Claude-Code-Project-Harness/
+├── README.md
+├── CHANGELOG.md
+├── init-harness/
+│   └── SKILL.md      # the harness itself — copy this folder to ~/.claude/skills/
+└── .gitignore
+```
 
 ## Status
 
-This is v1 of the prompt. It has been designed and internally reviewed across several
+This is v1 of the harness. It has been designed and internally reviewed across several
 iterations (see `CHANGELOG.md`) but **has not yet been run end-to-end against a production
 project** — that validation is the next milestone, not a claim already made here.
 
 ## Design log
 
-Every non-trivial decision in this prompt — why sequential roles over subagents, why
-`init.py` over `init.sh`, why the review loop writes to `memory.md` instead of the human —
-is documented with its reasoning in `CHANGELOG.md`, not just its outcome.
+Every non-trivial decision in this harness — why sequential roles over subagents, why
+`init.py` over `init.sh`, why the review loop writes to `memory.md` instead of the human,
+why this ships as a Skill instead of a pasted prompt — is documented with its reasoning in
+`CHANGELOG.md`, not just its outcome.

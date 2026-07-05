@@ -7,6 +7,22 @@ decisions made in the abstract.
 
 ---
 
+## v1.1.0 — Packaged as a Claude Code Skill
+
+### Repackaged from a pasted prompt to an installed Skill
+- **Decision:** The harness moved from "paste `UNIVERSAL_PROMPT.md` as your first message"
+  to `init-harness/SKILL.md`, installed once at `~/.claude/skills/init-harness/` and invoked
+  with `/init-harness`.
+- **Why:** A pasted prompt is indistinguishable from prompt-writing. A Skill is Claude Code's
+  actual native mechanism for reusable agent behavior — installed once, invoked by name,
+  loaded on demand via progressive disclosure. Same content, correct delivery mechanism for
+  a tool meant to be a personal default across every future project.
+- **What changed, what didn't:** All prior decisions (WAT, sequential roles, Clarify Gate,
+  Requirements Checklist, Planner audit, test-driven `memory.md` loop, on-demand MarkItDown)
+  carried over unchanged. Only the packaging and invocation mechanism changed.
+
+---
+
 ## v1.0.0 — Initial harness
 
 ### Sequential roles instead of parallel subagents
