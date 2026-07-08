@@ -7,9 +7,143 @@ decisions made in the abstract.
 
 ---
 
+## Unreleased
+
+Nothing yet.
+
+---
+
+## v1.2.2 — CONTEXT.md removed
+
+### CONTEXT.md dropped entirely
+
+- **Decision:** the file, the copy-on-scaffold mechanism, and the session read-order rule
+  for it are all removed. Reverses v1.2.0.
+- **Why:** on review, most of its content was already redundant with `CLAUDE.md` Ground
+  Rules (the language rule was stated in both places). What wasn't redundant — feedback
+  style — didn't justify a dedicated file, a copy mechanism, a new read-order rule, and a
+  "never modify" constraint to maintain. The cost was structural, not the one line of
+  content.
+- **What was NOT done:** the feedback-style line was not folded into `CLAUDE.md` Ground
+  Rules as a replacement. It was cut, full stop. If it turns out to matter in practice, that
+  is a one-line addition to an already-existing file, not a reason to reintroduce a
+  dedicated one.
+
+---
+
+## v1.2.1 — First bugs found from actually running the skill
+
+### MarkItDown didn't trigger on a file dropped mid-session
+
+- **What failed:** a `.docx` was added to a project and the agent was asked to analyze it
+  directly — it read nothing, converted nothing, and reported no instruction told it how to
+  handle non-Markdown files in that situation.
+- **Root cause:** the trigger was scoped to "if Q4 declared this" and to the Builder role
+  specifically. A file dropped in later and read directly, outside that path, wasn't
+  covered. The instruction also lived only in `SKILL.md`, which loads once at
+  `/init-harness` invocation — it doesn't persist into later sessions the way `CLAUDE.md`
+  does.
+- **Fix:** trigger broadened to "any non-Markdown file, at any point, regardless of how it
+  was introduced." `CLAUDE.md REQUIREMENTS` now explicitly requires the generated
+  `CLAUDE.md` to restate this rule, so it holds every session, not just at scaffold time.
+
+### Reviewer→Scribe handoff had an unresolved branch
+
+- **What failed:** "hands off to Scribe (if this project has one)" never said what happens
+  when there isn't one.
+- **Fix:** both branches stated explicitly — lightweight projects have Reviewer log its own
+  pass note; there's nothing to hand off.
+
+### CONTEXT.md had no source path
+
+- **What failed:** the file said it gets "copied from the skill's template" without saying
+  where that template lives, making the copy step unexecutable as written.
+- **Fix:** literal path added (`~/.claude/skills/init-harness/CONTEXT.md`), stated in both
+  the file listing and the CONTEXT.md section itself.
+
+### PROGRESS.md / roles/scribe.md / tools/checkpoint.py conditional logic was scattered
+
+- **What failed:** the Q2 dependency for these three files was implied in three different
+  places with no single governing statement.
+- **Fix:** one explicit rule — they're a package, tied to Q2, present or absent together.
+
+### PreCompact hook removed
+
+- **Decision:** dropped entirely, not relocated. It was bundled under "AUTOMATED
+  CHECKPOINTING" despite having nothing to do with checkpointing — a mislabeling that
+  caused it to be misread as one combined mechanism with the `Stop` hook.
+- **Consequence, stated plainly:** the harness now has **no** context-fullness warning
+  mechanism at all. `PreCompact` was the only native substitute for the originally requested
+  "warn at 60%" feature, and it was an imprecise one. If this capability is wanted again, it
+  needs its own section — not bundled with checkpointing — and a decision on whether the
+  imprecise native version is acceptable or a custom token-monitoring script is worth
+  building.
+
+---
+
+## v1.2.0 — Scribe, PROGRESS.md, CONTEXT.md, automated checkpointing
+
+### Scribe separated from Reviewer, from day one, in full-WAT/UI projects
+
+- **Decision:** `roles/scribe.md` is its own file whenever `PROGRESS.md` exists, not merged
+  into Reviewer. Reverses the v1.0.0 default of "keep merged until the file exceeds ~2
+  minutes to read."
+- **Why the reversal:** the original recommendation assumed the split was speculative
+  complexity with no evidence it was needed. That assumption was wrong — Prism, a real
+  running project, had already independently arrived at this exact separation. That's
+  evidence, not speculation. The corrected rule ties the split to a condition already in the
+  harness (does `PROGRESS.md` exist?) rather than a manual line-count check the user would
+  have to perform on every project — a cheaper and more scalable trigger than the one v1.0.0
+  proposed.
+- **Guardrail kept:** Scribe only exists where `PROGRESS.md` exists (full-WAT/UI). In
+  lightweight one-off scripts, there is no build state to track, so there is no Scribe file —
+  avoids creating an empty role with nothing to do.
+
+### PROGRESS.md — conditional, not universal
+
+- **Decision:** added to the file set, gated on the same Q2 condition as `workflows/`.
+- **Why:** real, non-redundant value (build-state snapshot for session start) confirmed by
+  Prism's actual use of it — but a 20-line script has no build state worth tracking, so it
+  doesn't earn the file.
+
+### CONTEXT.md — generalized, static, written once, never modified
+
+- **Decision:** a single template (`init-harness/CONTEXT.md`) copied verbatim into every new
+  project at scaffold time. Not generated from Phase 0 intake answers. Never rewritten or
+  appended to afterward.
+- **Why generalized, not personalized per project:** the content that's actually reusable
+  (identity, technical background, feedback style, dev environment, git conventions) is
+  stable across every project the user starts — it doesn't change per repo. The
+  project-specific content in the original Prism version of this file (stakeholders, a
+  specific business goal) was excluded on purpose: a file that is "static and never
+  modified" cannot, by definition, also hold information that varies per project. That
+  information is gathered instead through the normal Phase 0 intake, per project, where it
+  belongs.
+- **Guardrail:** if this file starts accumulating project-specific content or gets edited
+  mid-project, that's a design failure — it has silently become a second `memory.md`.
+
+### Automated checkpointing via a Stop hook, not a usage-percentage hook
+
+- **Decision:** `tools/checkpoint.py` (commit + push) triggered automatically by a Claude
+  Code `Stop` hook after every turn, plus a manual `/checkpoint` command calling the same
+  script.
+- **Why the original "90% of Pro plan usage" trigger was dropped:** verified against current
+  Claude Code hooks documentation — no hook event exposes subscription usage percentage.
+  Hooks fire on discrete lifecycle events (tool calls, turn end, compaction), not continuous
+  account-level metrics. There was nothing to hook into for that trigger; building around an
+  unverified mechanism would have shipped a feature that doesn't work.
+- **Context-fill warning:** implemented via the native `PreCompact` hook instead of a
+  configurable "60%" threshold, for the same reason — no hook exposes a context-percentage
+  metric. A precise percentage is buildable only via a custom token-monitoring script, which
+  was explicitly not added by default, consistent with the harness's own "don't add tooling
+  it hasn't earned" principle.
+
+---
+
 ## v1.1.0 — Packaged as a Claude Code Skill
 
 ### Repackaged from a pasted prompt to an installed Skill
+
 - **Decision:** The harness moved from "paste `UNIVERSAL_PROMPT.md` as your first message"
   to `init-harness/SKILL.md`, installed once at `~/.claude/skills/init-harness/` and invoked
   with `/init-harness`.
@@ -26,6 +160,7 @@ decisions made in the abstract.
 ## v1.0.0 — Initial harness
 
 ### Sequential roles instead of parallel subagents
+
 - **Decision:** One Lead Agent adopts roles (Planner/Builder/Reviewer) sequentially by
   reading `roles/*.md`, instead of spawning parallel subagents.
 - **Why:** Calibrated to a fixed-quota subscription (Claude Code Pro). Parallel subagents
@@ -34,11 +169,13 @@ decisions made in the abstract.
   delegation, the cost calculus changes and parallel execution may be worth revisiting.
 
 ### `init.py` instead of `init.sh`
+
 - **Decision:** Pre-flight check script is Python, not bash.
 - **Why:** Target environment is Windows + portability to a second machine. Bash requires
   WSL/Git Bash on Windows; Python runs natively and is already a project dependency.
 
 ### Self-improvement loop is test-driven, not manual notes
+
 - **Decision:** `memory.md` is written by the Reviewer after a verified failure/fix cycle,
   in a fixed format (what failed / root cause / fix / how to avoid it) — not a freeform
   notebook the user fills by hand.
@@ -46,18 +183,21 @@ decisions made in the abstract.
   actual test failures captures what the system actually got wrong.
 
 ### Clarify Gate is conditional, not mandatory
+
 - **Decision:** Extra clarification questions only trigger for recurring automations, tools
   with a UI, or genuinely ambiguous answers — not for simple one-off scripts.
 - **Why:** Unconditional clarification adds friction with no payoff on trivial projects. The
   cost of ambiguity scales with project complexity, so the gate should too.
 
 ### Requirements Checklist requires evidence per item, not a narrated summary
+
 - **Decision:** Phase 0 closes with a checked/flagged list (completeness, clarity,
   consistency, testability), each with stated evidence — not a prose recap.
 - **Why:** A prose summary can look complete while hiding an unresolved contradiction. A
   checklist with required evidence forces the agent to justify each claim.
 
 ### Planner self-audits for scope before handing off to Builder
+
 - **Decision:** The Planner checks its own task list for scope creep, requirement coverage,
   and dependency ordering before Builder starts — logged as a real pass/fail, not a bare
   "pass."
@@ -65,21 +205,16 @@ decisions made in the abstract.
   to catch after code is already written.
 
 ### Non-Markdown inputs are converted on demand, not scanned automatically
+
 - **Decision:** `tools/convert_to_markdown.py` (wrapping MarkItDown) runs only when a
   specific task needs to read a PDF/Office file — never a blanket scan on `init.py`.
 - **Why:** An automatic scan would convert files nobody asked about, violating the harness's
   own "ask, don't assume" rule.
 
 ### Scope: Claude Code only, not cross-tool
+
 - **Decision:** The trunk file stays `CLAUDE.md`, read directly by Claude Code. The harness
   does not adopt the `AGENTS.md` open standard used by Codex, Cursor, and OpenClaw/Hermes-style
   agents.
 - **Why:** Deliberate scope choice, not an oversight — evaluated and declined in favor of
   keeping the harness's design surface small and specific to one tool.
-
----
-
-## Unreleased
-
-Nothing yet. The next entry in this file should come from a real project run, not another
-design iteration in the abstract — the harness has not been validated end-to-end.

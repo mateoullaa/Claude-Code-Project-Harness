@@ -100,21 +100,30 @@ the point is the separation, not the folder count. Phase 1 decides how much to i
 Based on the project **Type** (Q2), choose the harness footprint and propose it for approval.
 Do not create folders yet — describe what you intend to create and why.
 
-- **Recurring automation / data pipeline** → full WAT: `workflows/`, `tools/`, `roles/`.
-- **One-off script or small tool** → lightweight: skip `workflows/`, keep a single role file
-  and a minimal `tools/` only if needed. Don't impose overhead the project doesn't earn.
-- **Tool with UI** → adapt: WAT for the logic layer, plus whatever the UI requires.
+**`PROGRESS.md`, `roles/scribe.md`, and `tools/checkpoint.py` are a single package, decided
+once by Q2 — present together, or absent together. There is no partial state.**
+
+- **Recurring automation / data pipeline** → full WAT: `workflows/`, `tools/`, `roles/`, plus
+  the package above.
+- **One-off script or small tool** → lightweight: skip `workflows/` and skip the package
+  above (there is no build state worth tracking). Keep a single role file and a minimal
+  `tools/` only if needed. Don't impose overhead the project doesn't earn.
+- **Tool with UI** → adapt: WAT for the logic layer, plus whatever the UI requires, plus the
+  package above.
 
 In all cases propose this core set and let the user approve or trim:
 
 ```
 CLAUDE.md         # Trunk file. Preloaded each session. Lean. References everything else.
 memory.md         # Self-healing log, written BY the review loop (see below).
+PROGRESS.md       # Build state tracker. Only in full-WAT / UI projects (see above).
 init.py           # Pre-flight check. Multiplatform (Windows/Linux/Mac). Run before any change.
-roles/            # Sequential role instructions (planner / builder / reviewer).
+roles/            # Sequential role instructions (planner / builder / reviewer / scribe*).
 tools/convert_to_markdown.py   # Optional. Only if Q4 includes non-Markdown inputs (PDF/Office).
+tools/checkpoint.py            # Commits + pushes. Only in full-WAT / UI projects.
 .gitignore        # Created at the GitHub step.
 ```
+*`roles/scribe.md` only exists where `PROGRESS.md` exists — see MULTI-ROLE MODEL below.
 
 Explain the role of each file in one line, then wait for approval.
 
@@ -132,7 +141,13 @@ projects. Roles:
 - **Reviewer** (`roles/reviewer.md`) — runs at the END of each task. Verifies the output
   exists, passes its tests, and meets the expected contract/schema. If it fails, it does NOT
   advance: triggers the correction loop and documents the lesson in `memory.md`. If it
-  passes, logs a one-line note and advances.
+  passes: in full-WAT/UI projects, hands off to Scribe to update `PROGRESS.md`; in
+  lightweight projects (no Scribe, no `PROGRESS.md`), Reviewer logs a one-line pass note
+  itself and advances — there's nothing to hand off.
+- **Scribe** (`roles/scribe.md`) — **only exists in full-WAT / UI projects (see the package
+  rule in PHASE 1).** Runs immediately after Reviewer passes a task. Updates
+  `PROGRESS.md`'s status markers (`[ ]` → `[~]` → `[x]`) and nothing else — it does not
+  verify correctness, that's Reviewer's job.
 
 > Exception (don't apply by default): if a future project has genuinely independent,
 > parallelizable work, real subagents may be worth it. The default stays sequential.
@@ -151,6 +166,21 @@ handing off to Builder, self-audit against:
 
 Do not proceed to Builder until the audit passes. Log a one-line pass/fail note, and if
 something was cut for scope, name what was cut — a bare "pass" is not sufficient.
+
+---
+
+## SCRIBE ROLE REQUIREMENTS (what roles/scribe.md must contain, full-WAT/UI only)
+
+`roles/scribe.md` must instruct the Scribe to, immediately after Reviewer logs a pass:
+
+- Update `PROGRESS.md`: move the completed item's marker to `[x]`, and if the next item was
+  `[ ]`, move it to `[~]` to show it's now in progress.
+- Do nothing else. Scribe does not judge correctness, does not touch `memory.md`, and does
+  not decide what counts as "done" — that was already decided by Reviewer. Scribe's only
+  job is keeping `PROGRESS.md` an accurate, current snapshot for the next session to read.
+
+This role file should be short — a few lines. If it starts accumulating logic beyond marker
+updates, that logic belongs in Reviewer or Builder, not here.
 
 ---
 
@@ -178,6 +208,20 @@ user corrects something or asks you to remember it, append it here in the same f
 
 ---
 
+## PROGRESS.md — BUILD STATUS (full-WAT / UI projects only)
+
+Read at the start of each session, right after `memory.md`. Written only by Scribe, only
+when Reviewer has just passed a task (see SCRIBE ROLE REQUIREMENTS above) — never written
+by Planner or Builder directly.
+
+States: `[ ]` pending · `[~]` in progress · `[x]` done and verified by Reviewer.
+
+This file answers one question at session start: "where did we leave off?" It is not a
+changelog and not a place for reasoning or lessons — that's `memory.md`. Keep each line to
+one task, one status marker.
+
+---
+
 ## init.py — PRE-FLIGHT CHECK
 
 Create `init.py` (Python, for Windows/notebook portability — not bash). `CLAUDE.md` must
@@ -201,10 +245,9 @@ dependencies "just in case."
 
 ## NON-MARKDOWN INPUT HANDLING (MarkItDown)
 
-If the project's inputs (Q4) include non-Markdown documents — PDF, DOCX, PPTX, XLSX, or
-similar office formats — the Builder converts them to Markdown before ingesting their
-content, instead of reading raw bytes or writing bespoke parsing code per project.
-Destination is always the agent's context, not a human reader.
+Non-Markdown documents — PDF, DOCX, PPTX, XLSX, or similar office formats — get converted to
+Markdown before their content is read, instead of reading raw bytes or writing bespoke
+parsing code. Destination is always the agent's context, not a human reader.
 
 **Tool**: [MarkItDown](https://github.com/microsoft/markitdown) (MIT, Microsoft).
 
@@ -223,8 +266,10 @@ result = md.convert_local(input_path)   # convert_local only — local files, ne
 Path(output_path).write_text(result.text_content, encoding="utf-8")
 ```
 
-**Trigger**: only when a specific task requires reading a non-Markdown input file — never a
-blanket filesystem scan during `init.py`.
+**Trigger**: any time you need to read a non-Markdown file — declared at Q4, or dropped into
+the project later and referenced directly — check for `tools/convert_to_markdown.py` first.
+If it doesn't exist yet in this project, create it now (see SKILLS & MCP — ON DEMAND ONLY):
+never read the raw file directly instead.
 
 **Known trade-offs to state, not silently absorb:**
 - Lossy by design: optimized for LLM ingestion, not visual fidelity.
@@ -232,6 +277,28 @@ blanket filesystem scan during `init.py`.
   an untrusted path or URL.
 - Token savings are real but not independently benchmarked; measure on actual files if it
   matters for a decision.
+
+---
+
+## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
+
+`tools/checkpoint.py` checks for a meaningful change (a real git diff, and `PROGRESS.md`
+showing a task that just moved to `[x]`) and, if so, commits and pushes.
+
+Two triggers call it — one script, no duplicated logic:
+
+1. A `Stop` hook, in `.claude/settings.json`, runs it after every turn.
+2. A manual `/checkpoint` command runs it on demand.
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "python tools/checkpoint.py" } ] }
+    ]
+  }
+}
+```
 
 ---
 
@@ -264,10 +331,18 @@ When you scaffold, the `CLAUDE.md` you generate must:
 
 - Stay lean and reference the other files instead of inlining their content.
 - Instruct: run `python init.py` before any change; if it fails, stop and ask.
-- Instruct: read `memory.md` at session start and apply its lessons.
-- Describe the sequential role model and when each role runs.
+- Instruct: read `memory.md`, then `PROGRESS.md` (if it exists) at session start, in that
+  order, before doing anything else.
+- Describe the sequential role model and when each role runs, including Scribe if this
+  project has a `PROGRESS.md`.
 - State the language rule (English artifacts, Spanish communication).
 - State the Skills/MCP on-demand rule.
+- If `tools/convert_to_markdown.py` exists or Q4 mentioned non-Markdown inputs, state
+  explicitly: any non-Markdown file encountered, at any point in the project, gets converted
+  via that tool before being read — this must hold every session, not just at scaffold time.
+- If this project has `tools/checkpoint.py`, note that it runs automatically via a `Stop`
+  hook — commits are not something the agent decides to do mid-task, they happen
+  deterministically after Reviewer/Scribe close out a task.
 - Link the files together so they reference each other coherently.
 
 ---

@@ -12,7 +12,7 @@ Left alone, an agentic coding tool degrades in two predictable ways:
 1. **Accuracy compounds downward.** If each unsupervised step is ~90% correct, five
    sequential steps land at ~59% success. Most "vibe coding" sessions fail here.
 2. **Context saturates.** As a session grows, instructions buried early get diluted or
-   forgotten — the agent gets *worse*, not better, the longer it runs.
+   forgotten — the agent gets _worse_, not better, the longer it runs.
 
 This harness addresses both with one mechanism: **deterministic execution + a mandatory
 review gate**, not more prompting.
@@ -21,7 +21,7 @@ review gate**, not more prompting.
 
 Claude Code Skills (`~/.claude/skills/<name>/SKILL.md`) are the current, native way to
 package reusable agent behavior — installed once, invoked with `/name`, loaded on demand
-instead of pasted every time. This repo ships the harness *as* one, not as a block of text
+instead of pasted every time. This repo ships the harness _as_ one, not as a block of text
 to copy into a fresh chat:
 
 - **Install scope matches the use case.** This is meant to be a personal default for every
@@ -38,14 +38,19 @@ to copy into a fresh chat:
   clarification gate for ambiguous or complex projects, and a requirements checklist that
   blocks progress until the intake is actually complete (not just answered).
 - **WAT separation** (Workflows / Agents / Tools) — the agent orchestrates, deterministic
-  Python scripts execute. This is *why* accuracy doesn't compound downward: execution isn't
+  Python scripts execute. This is _why_ accuracy doesn't compound downward: execution isn't
   left to probabilistic re-guessing on every step.
-- **Sequential role model** (Planner → Builder → Reviewer) instead of parallel subagents —
-  same separation of concerns, without burning a fixed subscription quota.
+- **Sequential role model** (Planner → Builder → Reviewer, plus Scribe in projects that
+  track build state) instead of parallel subagents — same separation of concerns, without
+  burning a fixed subscription quota.
 - **A Reviewer that actually gates progress.** It runs at the end of every task, checks the
   output against a defined success criterion, and blocks advancement on failure. Every
   failure is logged in a fixed, greppable format in `memory.md` — read back by the agent at
   the start of every future session.
+- **PROGRESS.md** — a build-state snapshot (`[ ]` / `[~]` / `[x]`), written by Scribe, read
+  at the start of every session, so the agent knows where a project was left off without
+  re-deriving it from the conversation history. Only provisioned for recurring automations
+  and UI tools — a one-off script has no build state worth tracking.
 - **On-demand tool use** — Skills, MCP servers, and document-to-Markdown conversion
   (via [MarkItDown](https://github.com/microsoft/markitdown)) are checked for and applied
   only when a task actually needs them, never preloaded.
@@ -81,8 +86,9 @@ Claude-Code-Project-Harness/
 ## Status
 
 This is v1 of the harness. It has been designed and internally reviewed across several
-iterations (see `CHANGELOG.md`) but **has not yet been run end-to-end against a production
-project** — that validation is the next milestone, not a claim already made here.
+iterations (see `CHANGELOG.md`). It has started real testing — the first pass already
+surfaced and fixed a real bug (see `v1.2.1` in the changelog) — but **has not yet been run
+end-to-end against a full production project**. Partial validation, not full validation.
 
 ## Design log
 
