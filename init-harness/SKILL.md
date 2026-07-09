@@ -65,7 +65,8 @@ and the agent stays focused on orchestration, where it's strong. Three layers, c
 
 - **Workflows** — markdown SOPs in `workflows/`: objective, inputs, tools, outputs, edge cases.
 - **Agents** — you. Read the workflow, run tools in order, ask when unsure.
-- **Tools** — Python scripts in `tools/` that do the actual work. Secrets only in `.env`.
+- **Tools** — Python scripts in `tools/` that do the actual work. Check `tools/` for
+  something that already does the job before writing a new script. Secrets only in `.env`.
 
 Apply the principle even when a small project doesn't need all three literal folders — the
 separation is the point, not the folder count. Phase 1 decides how much to instantiate.
@@ -132,8 +133,9 @@ parallel subagents — burns tokens for little gain on personal projects.
 ## THE SELF-IMPROVEMENT LOOP (test-driven, not manual notes)
 
 `memory.md` is fed by the review loop, not filled in by hand. On every failure: Reviewer
-identifies what broke → Builder fixes it → Reviewer re-verifies → the lesson is appended in
-this fixed format:
+identifies what broke → Builder fixes it (never re-running a paid API call or metered
+credit without asking first) → Reviewer re-verifies → the lesson is appended in this fixed
+format:
 
 ```
 ## [date] — <short title>
@@ -142,6 +144,11 @@ this fixed format:
 - Fix:
 - How to avoid it next time:
 ```
+
+If the failure traces back to a `workflows/*.md` SOP being wrong or outdated — not just the
+tool's code — Builder updates that workflow too, in the same fix: the procedure itself gets
+smarter, not just a note about it. Exception: never create or overwrite a workflow without
+asking, unless explicitly told to — these are instructions, not scratch notes.
 
 **Read `memory.md` first at the start of every session** and apply its lessons. User
 corrections get appended here too, same format.
@@ -169,10 +176,12 @@ If it fails: **stop, don't continue, ask for help.**
 
 ---
 
-## SKILLS & MCP — ON DEMAND ONLY
+## EXTERNAL SKILLS & MCP — ON DEMAND ONLY
 
-Before building anything new, check for an existing Skill or MCP that solves the task. Use
-one only if it genuinely helps; otherwise write the code. Never preload "just in case."
+Distinct from checking your own `tools/` folder (WAT PRINCIPLE above) — this is about
+Anthropic Skills or MCP servers you have access to. Before building anything new, check for
+one that solves the task. Use it only if it genuinely helps; otherwise write the code. Never
+preload "just in case."
 
 ---
 
@@ -197,7 +206,8 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 ```
 
 **Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. If the
-tool doesn't exist yet, create it now (SKILLS & MCP above) instead of reading raw bytes.
+tool doesn't exist yet, create it now (EXTERNAL SKILLS & MCP above) instead of reading raw
+bytes.
 
 **Trade-offs to state, not absorb silently**: lossy (optimized for LLM ingestion, not
 fidelity); I/O runs with process privileges (`convert_local()` only, never an untrusted
@@ -251,6 +261,8 @@ inlining them:
 - State the language rule and the Skills/MCP on-demand rule.
 - If non-Markdown inputs are in play, restate the MarkItDown rule explicitly — this must
   hold every session, not just at scaffold time.
+- If this project has `workflows/`, state that Builder updates a workflow file when a
+  failure traces back to the SOP itself, never overwriting one without asking first.
 - If `tools/checkpoint.py` exists, note commits happen deterministically via the `Stop`
   hook after Reviewer/Scribe close a task — not a judgment call mid-task.
 - `CLAUDE.md` is edited in place after scaffolding — not appended to like `memory.md`, not
