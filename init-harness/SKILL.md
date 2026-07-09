@@ -253,6 +253,14 @@ inlining them:
   hold every session, not just at scaffold time.
 - If `tools/checkpoint.py` exists, note commits happen deterministically via the `Stop`
   hook after Reviewer/Scribe close a task — not a judgment call mid-task.
+- `CLAUDE.md` is edited in place after scaffolding — not appended to like `memory.md`, not
+  status-tracked like `PROGRESS.md` — whenever a task creates a new `roles/` file, a new
+  standing tool, a new top-level folder, or an on-demand addition that changes an ongoing
+  rule (like MarkItDown). Builder makes the edit, in the same task that introduced the
+  change — a targeted addition, not a rewrite; if it would break the 2-minute limit (Ground
+  Rule 5), push detail into the referenced file instead. Reviewer's pass for that task
+  includes checking the reference was added — a task that changes structure without
+  updating `CLAUDE.md` does not pass.
 
 ---
 
