@@ -99,7 +99,8 @@ tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
 .claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only.
 .gitignore                      # Created at the GitHub step.
 ```
-*`roles/scribe.md` only exists where `PROGRESS.md` exists.
+
+\*`roles/scribe.md` only exists where `PROGRESS.md` exists.
 
 Explain each file in one line, then wait for approval.
 
@@ -126,9 +127,6 @@ parallel subagents — burns tokens for little gain on personal projects.
   Updates `PROGRESS.md` markers only (states below) — never judges correctness, never
   touches `memory.md`. Keep this file to a few lines; if it grows, that logic belongs
   elsewhere.
-
-> Exception: genuinely independent, parallelizable work may justify real subagents. Default
-> stays sequential.
 
 ---
 
@@ -170,7 +168,7 @@ Answers "where did we leave off" — not a changelog, not a place for reasoning 
 
 ## init.py — PRE-FLIGHT CHECK
 
-Create `init.py` (Python — Windows/notebook portability, not bash). `CLAUDE.md` must
+Create `init.py`. `CLAUDE.md` must
 instruct running `python init.py` before any change; verifies the folder/file structure
 exists, required `.md` files are present and non-empty, and tests (if any) pass.
 
@@ -194,11 +192,13 @@ never raw bytes, never bespoke parsing code. Destination is always the agent's c
 a human reader.
 
 **Tool**: [MarkItDown](https://github.com/microsoft/markitdown) (MIT, Microsoft).
+
 ```
 pip install 'markitdown[pdf,docx,pptx,xlsx]'   # scope to what Q4 actually needs
 ```
 
 Wrap as `tools/convert_to_markdown.py`, never called inline:
+
 ```python
 from markitdown import MarkItDown
 from pathlib import Path
@@ -210,10 +210,6 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 **Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. If the
 tool doesn't exist yet, create it now (EXTERNAL SKILLS & MCP above) instead of reading raw
 bytes.
-
-**Trade-offs to state, not absorb silently**: lossy (optimized for LLM ingestion, not
-fidelity); I/O runs with process privileges (`convert_local()` only, never an untrusted
-URL); token savings are real but unbenchmarked here.
 
 ---
 
@@ -228,14 +224,28 @@ Two triggers, one script:
 
 1. `Stop` hook, **merged into** `.claude/settings.json` — never overwrite an existing file,
    only add this hook entry — runs after every turn:
+
 ```json
-{"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "python tools/checkpoint.py"}]}]}}
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python tools/checkpoint.py" }
+        ]
+      }
+    ]
+  }
+}
 ```
+
 2. Manual `/checkpoint` command, `.claude/commands/checkpoint.md`:
+
 ```markdown
 ---
 description: Force a checkpoint now, without waiting for the Stop hook.
 ---
+
 Run `tools/checkpoint.py`; report what it committed, or that there was nothing to commit.
 ```
 
