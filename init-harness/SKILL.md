@@ -115,7 +115,9 @@ parallel subagents — burns tokens for little gain on personal projects.
   checklist item maps to a task), **sequencing** (respects real dependencies). Doesn't hand
   off until the audit passes; logs a pass/fail note — a bare "pass" isn't enough, name
   anything cut for scope.
-- **Builder** (`roles/builder.md`) — implements one task at a time, existing tools first.
+- **Builder** (`roles/builder.md`) — implements one task at a time, existing tools first;
+  when Planner's success criterion for a task is testable, writes that test too — Reviewer
+  needs something concrete to check.
 - **Reviewer** (`roles/reviewer.md`) — runs at the END of each task. Verifies output exists,
   passes tests, meets contract/schema. Fails → correction loop, lesson to `memory.md`, does
   NOT advance. Passes → full-WAT/UI: hands off to Scribe; lightweight (no Scribe): logs its
@@ -218,12 +220,14 @@ URL); token savings are real but unbenchmarked here.
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
 `tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]`
-in `PROGRESS.md`) and, if so, commits and pushes. Requires git already initialized with a
-remote — see GITHUB below for why that must happen before Builder starts task 1.
+in `PROGRESS.md`) and, if so, commits — then pushes only if a remote is configured; no
+remote is not an error, it just skips the push. Requires git initialized (see GITHUB below,
+before Builder starts task 1) but not necessarily a remote.
 
 Two triggers, one script:
 
-1. `Stop` hook in `.claude/settings.json`, runs after every turn:
+1. `Stop` hook, **merged into** `.claude/settings.json` — never overwrite an existing file,
+   only add this hook entry — runs after every turn:
 ```json
 {"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "python tools/checkpoint.py"}]}]}}
 ```
