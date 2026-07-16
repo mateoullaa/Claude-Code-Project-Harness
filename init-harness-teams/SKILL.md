@@ -1,10 +1,10 @@
 ---
 name: init-harness-teams
-description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured harness built on real parallel subagents instead of one Lead Agent switching roles — Planner/Builder/Reviewer/Scribe as isolated .claude/agents/*.md subagents, each pinned to a model tier chosen to conserve subscription quota, plus the same WAT-based file structure, test-driven self-improvement loop, and mandatory intake with a conditional clarify gate. Trigger on the same phrases as init-harness ('start a new project') when the user explicitly asks for subagent/Agent-Teams orchestration or wants roles split across models to save quota. Do not trigger for one-off scripts or existing-code fixes."
+description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured harness built on real parallel subagents instead of one Lead Agent switching roles — Planner/Builder/Reviewer/Scribe as isolated .claude/agents/*.md subagents, each pinned to a model tier chosen to conserve subscription quota, plus the same WAT-based file structure, test-driven self-improvement loop, and mandatory intake with a conditional clarify gate. Trigger on the same phrases as init-harness ('start a new project') when the user explicitly asks for subagent orchestration or wants roles split across models to save quota. Do not trigger for one-off scripts or existing-code fixes."
 argument-hint: "[optional: one-line description of what you want to build]"
 ---
 
-# Project Harness Initialization — Agent Teams Variant
+# Project Harness Initialization — Subagent Variant
 
 You are the **Lead Agent** orchestrating a team of specialized subagents in this folder. Planner, Builder, Reviewer, and Scribe are real, isolated subagents invoked through the Agent tool, each pinned to a specific model tier. Before writing a single file, interview the user. If `$ARGUMENTS` was provided, treat it as a starting answer to Question 1 and confirm it rather than re-asking from scratch.
 
@@ -17,7 +17,7 @@ You are the **Lead Agent** orchestrating a team of specialized subagents in this
 3. **Unsure user → propose.** Give 2–3 approaches with trade-offs, wait for their choice — never pick architecture for them.
 4. **No file before plan approval.** Intake → plan → approval → scaffold.
 5. **Every file readable in ~2 minutes.** One responsibility per file, split if it grows past that. `CLAUDE.md` loads every session — keep it leanest of all.
-6. **Never over-provision a model.** Quota on a subscription plan is shared across every subagent call. Before assigning or escalating a subagent's model, ask "does this specific task need this much reasoning?" — not "would more reasoning help." Escalate only on demonstrated failure (see MODEL ASSIGNMENT below), never by default.
+6. **Never over-provision a model.** Quota on a subscription plan is shared across every subagent call. Before assigning or escalating a subagent's model, ask "does this specific task need this much reasoning?" — not "would more reasoning help." Escalate only on demonstrated failure, except Planner's one-time Opus default (see MODEL ASSIGNMENT below).
 
 ---
 
@@ -66,7 +66,7 @@ Apply this even when a small project doesn't need all three folders — the sepa
 Pick footprint from Q2, propose it — don't create folders yet.
 
 - **Recurring automation / data pipeline** → full WAT (`workflows/`, `tools/`, `.claude/agents/`), plus `PROGRESS.md`, `.claude/agents/scribe.md`, `tools/checkpoint.py`, `.claude/settings.json`, and `.claude/commands/checkpoint.md`.
-- **One-off script or small tool** → lightweight: skip `workflows/` and the five files above — no build state worth tracking. Still use subagents for Builder/Reviewer (isolation is cheap to keep even for small jobs); skip Scribe entirely since there's no `PROGRESS.md` to update.
+- **One-off script or small tool** → lightweight: skip `workflows/` and the five files above — no build state worth tracking. Still use Builder/Reviewer subagents; skip Scribe entirely since there's no `PROGRESS.md` to update.
 - **Tool with UI** → full WAT, plus all five files above, plus whatever frontend/backend the UI needs.
 
 Core file set to propose for approval:
@@ -76,7 +76,7 @@ CLAUDE.md                       # Trunk file, preloaded each session, lean.
 memory.md                       # Self-healing log, written by Reviewer subagent.
 PROGRESS.md                     # Build state tracker. Full-WAT/UI only.
 init.py                         # Pre-flight check. Multiplatform.
-.claude/agents/planner.md       # Subagent definition, model: sonnet.
+.claude/agents/planner.md       # Subagent definition, model: opus.
 .claude/agents/builder.md       # Subagent definition, model: sonnet.
 .claude/agents/reviewer.md      # Subagent definition, model: sonnet.
 .claude/agents/scribe.md        # Subagent definition, model: haiku. Full-WAT/UI only.
@@ -95,25 +95,25 @@ Explain each file in one line, then wait for approval.
 
 Four subagents, each a standalone `.claude/agents/<name>.md` file with its own frontmatter (`name`, `description`, `model`, `tools`) and system prompt. The Lead Agent (this conversation) never adopts their hats — it invokes them via the Agent tool and relays results.
 
-Because subagents share no conversation memory, every invocation must be **self-contained**: pass the task description, the relevant slice of `memory.md`, and the current `PROGRESS.md` line in the prompt — but instruct each subagent to also independently verify against the actual files on disk rather than trusting the handoff description. This is a feature, not overhead: it's what gives Reviewer its independence from Builder.
+Because subagents share no conversation memory, every invocation must be **self-contained**: pass the task description, the relevant slice of `memory.md`, and the current `PROGRESS.md` line in the prompt — and instruct each subagent to independently verify against the actual files on disk rather than trusting the handoff description.
 
-### Model assignment (default — conserves quota by design)
+### Model assignment
 
-| Subagent | Model  | Runs                            | Why this tier                                                                                                                                                                                              |
-| -------- | ------ | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Planner  | sonnet | once per plan (rarely re-run)   | Needs real judgment for the scope/coverage/sequencing self-audit. A weak plan compounds into wasted quota on every downstream task — the one place a cheap model creates hidden cost instead of saving it. |
-| Builder  | sonnet | once per task                   | Implements and writes tests. Correctness-critical; no safe downgrade — this is the most quota-heavy role by design and that's expected.                                                                    |
-| Reviewer | sonnet | once per task                   | Sole gate before code reaches `memory.md`/`PROGRESS.md`. Tempting to cut, but a downgraded Reviewer means bad code slips through silently — keep it at Builder's tier.                                     |
-| Scribe   | haiku  | once per task, full-WAT/UI only | Charter explicitly forbids judgment — it only flips a `[ ]`/`[~]`/`[x]` marker. Identical output quality on a cheap model; this is the one role where tiering down is free.                                |
+| Subagent | Model  | Runs                             | Why this tier |
+| -------- | ------ | --------------------------------- | -------------- |
+| Planner  | opus   | once per plan (rarely re-run)    | One call, highest leverage: a weak plan wastes quota on every downstream task, so the extra reasoning is a fixed, one-time cost against the biggest risk in the pipeline. |
+| Builder  | sonnet | once per task                    | Correctness-critical implementation; runs per task, so upgrading it multiplies cost by task count instead of paying once. |
+| Reviewer | sonnet | once per task                    | Sole gate before code reaches `memory.md`/`PROGRESS.md`. Same per-task cost logic as Builder — downgrading risks silent bad code, upgrading multiplies cost across the project. |
+| Scribe   | haiku  | once per task, full-WAT/UI only  | Charter forbids judgment — only flips a `[ ]`/`[~]`/`[x]` marker; same output quality on the cheapest tier. |
 
-**Opus is not in the default assignment.** On a subscription plan it draws down quota fastest of the three tiers for the least routine benefit. If Planner or Reviewer fails the same correction loop twice in a row, the Lead Agent may ask the user for one-off permission to re-run _that specific call_ on Opus — never set a role's default model to Opus without the user asking for it first.
+If Builder or Reviewer fails the same correction loop twice in a row, the Lead Agent may ask the user for one-off permission to re-run *that specific call* on Opus — never bump either role's default tier without the user asking first.
 
-If Q6 revealed the user is on API billing rather than a Claude subscription, note in the structure proposal that this tiering also cuts real dollar cost proportionally (Haiku is priced far below Sonnet per token) — on a subscription plan it instead stretches the shared usage window further before hitting a cap.
+If Q6 revealed API billing rather than a subscription, note in the structure proposal that this tiering also cuts real dollar cost (Haiku is priced far below Sonnet per token); on a subscription it instead stretches the shared usage window before hitting a cap.
 
 ### Orchestration flow
 
 1. **Planner** runs once, produces a task list with success criteria and a dependency tag per task (`none` or `depends-on: <task-id>`). Same self-audit as before: scope, coverage, sequencing — logs a pass/fail note naming anything cut.
-2. **Builder** runs once per task. Tasks tagged `depends-on` run strictly after their dependency's Reviewer pass. Tasks tagged `none` may be dispatched as **parallel Builder subagent calls in the same turn** — this is the actual payoff of Agent Teams over the sequential model.
+2. **Builder** runs once per task. Tasks tagged `depends-on` run strictly after their dependency's Reviewer pass. Tasks tagged `none` may be dispatched as **parallel Builder subagent calls in the same turn** — this is the actual payoff of this variant over the sequential-role model.
    - **Gate**: before the first parallel fan-out in a project, ask the user ("N independent tasks queued — run Builder in parallel?"). Concurrent Sonnet calls draw down a shared usage window faster in a burst than the same total tokens spent sequentially, even though the token total is identical — the user should choose that trade-off, not have it made for them.
 3. **Reviewer** always runs one call at a time, even when Builder fanned out in parallel — it verifies each parallel Builder's output in turn and is the sole writer to `memory.md`. Never parallelize Reviewer: concurrent writers to the same log file will race.
 4. Reviewer fail → correction loop: Reviewer's prompt to the next Builder call includes the concrete failure, Builder fixes it (never re-running a paid API call or metered credit without asking first), Reviewer re-verifies. Passes → full-WAT/UI hands off to **Scribe**; lightweight (no `PROGRESS.md`) skips Scribe and the Lead Agent just advances.
