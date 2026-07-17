@@ -13,6 +13,92 @@ Nothing yet.
 
 ---
 
+## v1.3.1 — Doc-density and agent-readability pass (both skills)
+
+### init-harness-teams/SKILL.md compressed 390 → 242 lines
+
+- **Decision:** cut the full Python skeleton for `get_context.py` (duplicated the
+  step-by-step spec already stated in prose right above it) and removed all 18 `---`
+  section dividers (redundant with the `##` headers already providing visual separation).
+- **Why:** the file's own Ground Rule 5 ("every file readable in ~2 minutes... split if it
+  grows past that") wasn't being applied to itself. Verified against a full guardrail
+  checklist before and after the cut — no functionality, threshold, or clarification was
+  lost, only redundant formatting and duplicated content.
+
+### Human-oriented narrative removed from both SKILL.md files
+
+- **What failed:** a `SKILL.md` is read by Claude Code executing it, not by a human, but
+  both files had accumulated retrospective and comparative asides — "Replaces the old
+  Scribe subagent," decorative header subtitles like "(the backbone of this harness)," "the
+  actual payoff of this variant," "(the trunk file you will write)." None of these changed
+  what the executing agent does; the Scribe references in particular risked the agent
+  looking for or expecting a component that no longer exists in the design.
+- **Fix:** cut from both `init-harness/SKILL.md` and `init-harness-teams/SKILL.md`.
+  Rationale that helps the agent generalize to cases the spec doesn't cover explicitly
+  (e.g. the WAT principle's causal explanation, or why Reviewer never trusts its own
+  "done" claim) was kept — the line drawn was "explains a decision the agent needs to
+  make" versus "narrates the file's own design history for a reader who isn't the one
+  executing it."
+
+---
+
+## v1.3.0 — init-harness-teams: deterministic context retrieval replaces hand-summarized memory, Scribe replaced by a verified script
+
+### Subagents had no way to get task-relevant context without a full read or a hand-summarized prompt
+
+- **What failed:** the original self-containment rule for isolated subagents ("pass the
+  relevant slice of memory.md... in the prompt") required the Lead Agent to decide, by
+  judgment, what counted as "relevant" — a probabilistic decision doing work the harness's
+  own WAT principle says belongs in a deterministic tool, not in reasoning.
+- **Fix:** `memory.md` entries gained a required `Scope:` field; `PROGRESS.md` lines gained
+  a fixed format carrying `task-id`, `scope`, and `depends-on`. `tools/get_context.py
+  <task-id>` resolves both from that one stable key — Builder and Reviewer run it
+  themselves as their first action instead of trusting a Lead-Agent summary or a line
+  number that will have shifted by read time. `init.py` gained size-triggered
+  auto-archiving to `archive.md` (~15 entries, keeping any entry whose scope matches a
+  still-active task regardless of age) so the file this tool reads never grows unbounded.
+
+### Scribe subagent removed — a full subagent round trip to flip one character was the exact case the WAT principle exists to avoid
+
+- **Decision:** `tools/update_progress.py` replaces the Scribe subagent. Builder marks
+  `in-progress` on start; Reviewer marks `done` as its last action.
+- **Why:** in the sub-agent variant (unlike `init-harness`'s sequential role-switching,
+  which costs nothing extra since it's the same conversation), Scribe was a genuine network
+  round trip plus context overhead spent on a zero-judgment marker flip.
+- **Guardrail added on review:** an external review of the first draft of this fix flagged
+  a blind-trust gap — `done` must never take Reviewer's word for a pass. The final version
+  requires `--test-cmd "<command>"` or an explicit `--no-test`, and the script **re-runs
+  the command itself** before writing anything; only a real exit 0 produced by its own
+  execution flips `[x]`. Without this, a Reviewer mistake or a hallucinated pass could
+  silently corrupt build state and let the Lead Agent advance past broken code.
+
+### Retry loop had no hard stop
+
+- **What failed:** the Builder/Reviewer correction loop could, in principle, run
+  indefinitely if the user never responded to the Opus-escalation ask at 2 failures.
+- **Fix:** three-step retry ladder — retry once with the concrete failure in the prompt,
+  ask the user for one-off Opus permission at 2 fails in a row, **STOP and ask the user**
+  at 3 fails in a row on the same task. No further automatic retries past that point.
+
+### Builder's TDD instruction was missing from the sub-agent variant
+
+- **What failed:** `init-harness` explicitly tells Builder to write the test for a task's
+  success criterion when it's testable; `init-harness-teams` only implied it via a `Bash`
+  tool grant, never stated it.
+- **Fix:** ported the instruction over verbatim into the Orchestration flow.
+
+### tools/validate_state.py added
+
+- **Decision:** run by `init.py`'s pre-flight pass; checks every `memory.md` entry has a
+  `Scope:` line and every `PROGRESS.md` line matches the fixed format — follows `init.py`'s
+  stop-on-fail rule, unlike auto-archiving, which is a normal pass.
+- **Why:** the new `Scope`/`task-id` format is enforced by charter convention, not by the
+  tool grant. A silent typo in either file would break `get_context.py`'s matching without
+  anyone noticing until a subagent silently got no history for a scope that actually had
+  some.
+
+---
+
 ## v1.2.2 — CONTEXT.md removed
 
 ### CONTEXT.md dropped entirely

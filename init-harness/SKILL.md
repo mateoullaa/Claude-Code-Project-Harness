@@ -48,7 +48,7 @@ Any unchecked item blocks Phase 1.
 
 ---
 
-## THE WAT PRINCIPLE (the backbone of this harness)
+## THE WAT PRINCIPLE
 
 **Probabilistic AI handles reasoning; deterministic code handles execution.** Five agent-improvised steps at 90% each compound to ~59% success — push execution into scripts so the agent stays focused on orchestration. Three layers:
 
@@ -216,7 +216,7 @@ Once Phase 1's structure exists, initialize git **before Builder starts task 1**
 
 ---
 
-## CLAUDE.md REQUIREMENTS (the trunk file you will write)
+## CLAUDE.md REQUIREMENTS
 
 The generated `CLAUDE.md` must, staying lean and referencing other files rather than inlining them:
 

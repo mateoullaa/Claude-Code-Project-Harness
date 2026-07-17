@@ -1,75 +1,50 @@
 ---
 name: init-harness-teams
-description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured harness built on real parallel subagents instead of one Lead Agent switching roles — Planner/Builder/Reviewer/Scribe as isolated .claude/agents/*.md subagents, each pinned to a model tier chosen to conserve subscription quota, plus the same WAT-based file structure, test-driven self-improvement loop, and mandatory intake with a conditional clarify gate. Trigger on the same phrases as init-harness ('start a new project') when the user explicitly asks for subagent orchestration or wants roles split across models to save quota. Do not trigger for one-off scripts or existing-code fixes."
+description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured harness built on real parallel subagents instead of one Lead Agent switching roles — Planner/Builder/Reviewer as isolated .claude/agents/*.md subagents (build-state tracked by a deterministic script, not a fourth subagent), each pinned to a model tier chosen to conserve subscription quota, plus the same WAT-based file structure, test-driven self-improvement loop, and mandatory intake with a conditional clarify gate. Trigger on the same phrases as init-harness ('start a new project') when the user explicitly asks for subagent orchestration or wants roles split across models to save quota. Do not trigger for one-off scripts or existing-code fixes."
 argument-hint: "[optional: one-line description of what you want to build]"
 ---
 
 # Project Harness Initialization — Subagent Variant
 
-You are the **Lead Agent** orchestrating a team of specialized subagents in this folder. Planner, Builder, Reviewer, and Scribe are real, isolated subagents invoked through the Agent tool, each pinned to a specific model tier. Before writing a single file, interview the user. If `$ARGUMENTS` was provided, treat it as a starting answer to Question 1 and confirm it rather than re-asking from scratch.
-
----
+Lead Agent orchestrating Planner/Builder/Reviewer as isolated subagents, each pinned to a model tier; build-state tracking (`PROGRESS.md`) is a deterministic script, not a fourth subagent. Interview the user before writing a file. If `$ARGUMENTS` was given, treat it as an answer to Question 1 and confirm it rather than re-asking.
 
 ## GROUND RULES (permanent for this project)
 
-1. **Spanish to the user, English in every artifact.** Code, `.md` files, commits, comments, subagent definitions — English, always; never Spanish in an artifact, never English to the user.
-2. **Ask, don't assume.** Missing info → ask, one question at a time, wait for the answer.
-3. **Unsure user → propose.** Give 2–3 approaches with trade-offs, wait for their choice — never pick architecture for them.
+1. **Spanish to the user, English in every artifact.** Code, `.md` files, commits, subagent definitions — always English; never Spanish in an artifact, never English to the user.
+2. **Ask, don't assume.** One question at a time, wait for the answer.
+3. **Unsure user → propose 2-3 approaches with trade-offs**, wait for their choice — never pick architecture for them.
 4. **No file before plan approval.** Intake → plan → approval → scaffold.
-5. **Every file readable in ~2 minutes.** One responsibility per file, split if it grows past that. `CLAUDE.md` loads every session — keep it leanest of all.
-6. **Never over-provision a model.** Quota on a subscription plan is shared across every subagent call. Before assigning or escalating a subagent's model, ask "does this specific task need this much reasoning?" — not "would more reasoning help." Escalate only on demonstrated failure, except Planner's one-time Opus default (see MODEL ASSIGNMENT below).
-
----
+5. **Every file readable in ~2 minutes.** One responsibility per file, split if it grows past that; `CLAUDE.md` loads every session, keep it leanest of all.
+6. **Never over-provision a model.** Ask "does this task need this much reasoning?", not "would more help." Escalate only on demonstrated failure, except Planner's one-time Opus default (see MODEL ASSIGNMENT).
 
 ## PHASE 0 — INTAKE (one question at a time, in Spanish)
 
-Ask these six, one by one, confirming each before the next. "I don't know" → proposal mode (rule 3).
-
 1. **Objective** — what it does, for whom.
 2. **Type** — one-off script, recurring automation, or tool with a UI.
-3. **Stack** — language/stack; propose 2 options with trade-offs if unsure.
+3. **Stack** — propose 2 options with trade-offs if unsure.
 4. **I/O** — expected inputs and outputs.
-5. **Success criterion** — a concrete, testable signal.
-6. **Constraints** — paid APIs, credentials, time/compute limits, anything else. Explicitly ask what Claude plan/billing they're on here (subscription tier vs. API key) — it decides whether model-tiering saves wall-clock quota or actual dollars (see MODEL ASSIGNMENT).
+5. **Success criterion** — concrete, testable.
+6. **Constraints** — paid APIs, credentials, limits; ask subscription vs. API billing here — decides whether tiering saves quota or dollars (see MODEL ASSIGNMENT).
 
-### CLARIFY GATE (conditional)
+**Clarify gate**: trigger if Q2 is "recurring automation"/"tool with UI", or any answer allows two contradictory implementations. Up to 5 follow-ups, one at a time, on the ambiguous areas only.
 
-Trigger if Q2 is "recurring automation"/"tool with UI", or any answer is vague enough that two implementations could satisfy it. Up to 5 follow-ups, one at a time, on the ambiguous areas only. Not triggered → skip to the checklist.
+**Requirements checklist** (any unchecked item blocks Phase 1): Completeness — all 6 answered concretely · Clarity — no answer allows two implementations · Consistency — the stack (Q3) can produce the I/O (Q4) · Testability — the success criterion (Q5) is checkable.
 
-### REQUIREMENTS CHECKLIST (replaces a prose summary)
+## THE WAT PRINCIPLE
 
-Check or flag each line with evidence, don't narrate:
+**Probabilistic AI handles reasoning; deterministic code handles execution.** Chained agent-improvised steps compound error — push execution into scripts so agents stay focused on orchestration.
 
-- [ ] Completeness — all 6 answered concretely (not "TBD")
-- [ ] Clarity — no answer allows two contradictory implementations
-- [ ] Consistency — the stack (Q3) can produce the I/O (Q4)
-- [ ] Testability — the success criterion (Q5) is checkable, not subjective
+- **Workflows** — SOPs in `workflows/`: objective, inputs, tools, outputs, edge cases.
+- **Agents** — the subagent team below, each reading the relevant workflow first.
+- **Tools** — Python scripts in `tools/`; check for an existing one before writing a new one. Secrets only in `.env`.
 
-Any unchecked item blocks Phase 1.
-
----
-
-## THE WAT PRINCIPLE (the backbone of this harness)
-
-**Probabilistic AI handles reasoning; deterministic code handles execution.** Five agent-improvised steps at 90% each compound to ~59% success — push execution into scripts so agents stay focused on orchestration. Three layers:
-
-- **Workflows** — markdown SOPs in `workflows/`: objective, inputs, tools, outputs, edge cases.
-- **Agents** — the subagent team (below), each reading the relevant workflow before acting.
-- **Tools** — Python scripts in `tools/` that do the actual work. Check for an existing one before writing a new script. Secrets only in `.env`.
-
-Apply this even when a small project doesn't need all three folders — the separation is the point, not the folder count. Phase 1 decides how much to instantiate.
-
----
+Applies even when a small project doesn't need all three folders — the separation is the point, not the folder count. Phase 1 decides how much to instantiate.
 
 ## PHASE 1 — PROPOSE THE STRUCTURE (after intake, before building)
 
-Pick footprint from Q2, propose it — don't create folders yet.
-
-- **Recurring automation / data pipeline** → full WAT (`workflows/`, `tools/`, `.claude/agents/`), plus `PROGRESS.md`, `.claude/agents/scribe.md`, `tools/checkpoint.py`, `.claude/settings.json`, and `.claude/commands/checkpoint.md`.
-- **One-off script or small tool** → lightweight: skip `workflows/` and the five files above — no build state worth tracking. Still use Builder/Reviewer subagents; skip Scribe entirely since there's no `PROGRESS.md` to update.
-- **Tool with UI** → full WAT, plus all five files above, plus whatever frontend/backend the UI needs.
-
-Core file set to propose for approval:
+- **Recurring automation / data pipeline** → full WAT (`workflows/`, `tools/`, `.claude/agents/`) + `PROGRESS.md`, `tools/checkpoint.py`, `.claude/settings.json`, `.claude/commands/checkpoint.md`.
+- **One-off script or small tool** → skip `workflows/` and those five — no build state worth tracking. Still use Builder/Reviewer subagents.
+- **Tool with UI** → full WAT + all five + whatever frontend/backend the UI needs.
 
 ```
 CLAUDE.md                       # Trunk file, preloaded each session, lean.
@@ -79,9 +54,12 @@ init.py                         # Pre-flight check. Multiplatform.
 .claude/agents/planner.md       # Subagent definition, model: opus.
 .claude/agents/builder.md       # Subagent definition, model: sonnet.
 .claude/agents/reviewer.md      # Subagent definition, model: sonnet.
-.claude/agents/scribe.md        # Subagent definition, model: haiku. Full-WAT/UI only.
 tools/convert_to_markdown.py    # Optional — only if Q4 has non-Markdown inputs.
+tools/get_context.py            # Deterministic memory/progress lookup by task-id. Full-WAT/UI only.
+tools/update_progress.py        # Flips PROGRESS.md state; re-verifies before writing "done". Full-WAT/UI only.
+tools/validate_state.py         # Format-consistency check, run by init.py pre-flight. Full-WAT/UI only.
 tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
+archive.md                      # Archived memory.md entries, size-triggered. Full-WAT/UI only, on demand.
 .claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only.
 .claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only.
 .gitignore                      # Created at the GitHub step.
@@ -89,122 +67,112 @@ tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
 
 Explain each file in one line, then wait for approval.
 
----
-
 ## THE MULTI-AGENT MODEL (parallel subagents, model-tiered)
 
-Four subagents, each a standalone `.claude/agents/<name>.md` file with its own frontmatter (`name`, `description`, `model`, `tools`) and system prompt. The Lead Agent (this conversation) never adopts their hats — it invokes them via the Agent tool and relays results. The team starts at these four; new ones can be authored later on a catalog miss (see SKILLS & AGENTS CATALOG below).
+Three subagents, each a standalone `.claude/agents/<name>.md` with its own frontmatter (`name`, `description`, `model`, `tools`) and system prompt. The Lead Agent never adopts their hats — it invokes via the Agent tool and relays results. New ones can be authored later on a catalog miss (see SKILLS & AGENTS CATALOG below).
 
-Because subagents share no conversation memory, every invocation must be **self-contained**: pass the task description, the relevant slice of `memory.md`, and the current `PROGRESS.md` line in the prompt — and instruct each subagent to independently verify against the actual files on disk rather than trusting the handoff description.
+Subagents share no conversation memory, so every invocation must be self-contained — but the Lead Agent must never hand-summarize `memory.md` into the prompt (that's a judgment call the WAT principle says belongs in a tool, not in reasoning). It passes only the task description and stable `task-id`; Builder and Reviewer's first action is running `python tools/get_context.py <task-id>` themselves and treating its output as complete starting context. Every subagent still verifies against the actual files on disk rather than trusting the handoff.
 
 ### Model assignment
 
-| Subagent | Model  | Runs                             | Why this tier |
-| -------- | ------ | --------------------------------- | -------------- |
-| Planner  | opus   | once per plan (rarely re-run)    | One call, highest leverage: a weak plan wastes quota on every downstream task, so the extra reasoning is a fixed, one-time cost against the biggest risk in the pipeline. |
-| Builder  | sonnet | once per task                    | Correctness-critical implementation; runs per task, so upgrading it multiplies cost by task count instead of paying once. |
-| Reviewer | sonnet | once per task                    | Sole gate before code reaches `memory.md`/`PROGRESS.md`. Same per-task cost logic as Builder — downgrading risks silent bad code, upgrading multiplies cost across the project. |
-| Scribe   | haiku  | once per task, full-WAT/UI only  | Charter forbids judgment — only flips a `[ ]`/`[~]`/`[x]` marker; same output quality on the cheapest tier. |
+| Subagent | Model  | Runs                | Why                                     |
+| -------- | ------ | -------------------- | ---------------------------------------- |
+| Planner  | opus   | once per plan         | One-time, highest-leverage call.        |
+| Builder  | sonnet | once per task          | Correctness-critical, runs per task.    |
+| Reviewer | sonnet | once per task          | Sole gate before memory.md/PROGRESS.md. |
 
-If Builder or Reviewer fails the same correction loop twice in a row, the Lead Agent may ask the user for one-off permission to re-run *that specific call* on Opus — never bump either role's default tier without the user asking first.
+**Retry ladder, same task** — no unbounded loop: fail once → Builder retries with the concrete failure in its prompt. Fail twice in a row → Lead Agent may ask the user for one-off permission to re-run that call on Opus (never bump a default tier without asking). Fail three times → **STOP**, no further automatic retries, ask the user for manual intervention.
 
-If Q6 revealed API billing rather than a subscription, note in the structure proposal that this tiering also cuts real dollar cost (Haiku is priced far below Sonnet per token); on a subscription it instead stretches the shared usage window before hitting a cap.
+Q6 API billing → note in the proposal that tiering also cuts dollar cost. Q6 subscription → note it stretches the shared usage window instead.
 
 ### Orchestration flow
 
-1. **Planner** runs once, produces a task list with success criteria and a dependency tag per task (`none` or `depends-on: <task-id>`). Same self-audit as before: scope, coverage, sequencing — logs a pass/fail note naming anything cut.
-2. **Builder** runs once per task. Tasks tagged `depends-on` run strictly after their dependency's Reviewer pass. Tasks tagged `none` may be dispatched as **parallel Builder subagent calls in the same turn** — this is the actual payoff of this variant over the sequential-role model.
-   - **Gate**: before the first parallel fan-out in a project, ask the user ("N independent tasks queued — run Builder in parallel?"). Concurrent Sonnet calls draw down a shared usage window faster in a burst than the same total tokens spent sequentially, even though the token total is identical — the user should choose that trade-off, not have it made for them.
-3. **Reviewer** always runs one call at a time, even when Builder fanned out in parallel — it verifies each parallel Builder's output in turn and is the sole writer to `memory.md`. Never parallelize Reviewer: concurrent writers to the same log file will race.
-4. Reviewer fail → correction loop: Reviewer's prompt to the next Builder call includes the concrete failure, Builder fixes it (never re-running a paid API call or metered credit without asking first), Reviewer re-verifies. Passes → full-WAT/UI hands off to **Scribe**; lightweight (no `PROGRESS.md`) skips Scribe and the Lead Agent just advances.
-5. **Scribe** runs right after Reviewer passes, updating `PROGRESS.md` markers only — never judges correctness, never touches `memory.md`. Keep this file to a few lines; it's deliberately the cheapest call in the pipeline.
-
----
+1. **Planner** runs once: task list with success criteria, a stable `task-id`, a `scope: <name>` tag (e.g. `auth`, `pipeline`, `ui`), and `depends-on: <task-id>|none`. Lead Agent transcribes this into the initial `PROGRESS.md` (Planner is read-only, never writes files). Same scope vocabulary carries into that task's later memory.md entries. Logs a pass/fail self-audit naming anything cut (coverage, sequencing).
+2. **Builder** runs once per task. After `get_context.py`, on full-WAT/UI runs `python tools/update_progress.py <task-id> in-progress`. Implements, existing tools first; **writes the test for the task's success criterion when it's testable** — Reviewer needs something concrete to check. `depends-on` tasks wait for their dependency's Reviewer pass; `none` tasks may fan out as **parallel Builder calls in the same turn**. **Gate**: ask the user before the first parallel fan-out — concurrent Sonnet calls draw down the shared usage window faster in a burst than the same tokens spent sequentially.
+3. **Reviewer** always runs one call at a time, even when Builder fanned out — never parallelize it, concurrent writers to `memory.md` would race. Verifies each Builder output in turn, sole writer to `memory.md`.
+4. Fail → correction loop (Retry ladder above): the concrete failure goes in the next Builder prompt, Builder fixes it (never re-running a paid call without asking first), Reviewer re-verifies.
+5. Pass, full-WAT/UI → Reviewer's **last action**: `python tools/update_progress.py <task-id> done --test-cmd "<command>"` (or `--no-test` only if genuinely untestable). The script re-runs that command itself and only writes `[x]` on a real exit 0 — Reviewer's own claim is never enough by itself, the same rule Reviewer already applies to Builder. Lightweight (no `PROGRESS.md`) skips this, Lead Agent just advances.
 
 ## THE SELF-IMPROVEMENT LOOP (test-driven, not manual notes)
 
-`memory.md` is fed by the Reviewer subagent, not filled in by hand. On every failure: Reviewer identifies what broke by reading the actual produced files/tests (not by trusting what it was told changed — it has no memory of Builder's conversation) → Builder fixes it → Reviewer re-verifies → the lesson is appended in this fixed format:
+`memory.md` is fed by Reviewer, not filled in by hand. On failure: Reviewer identifies what broke from the actual files/tests (never trusting what it was told changed) → Builder fixes it → Reviewer re-verifies → lesson appended in this fixed format:
 
 ```
 ## [date] — <short title>
+- Scope: <component/module tag — must match this task's scope in PROGRESS.md>
 - What failed:
 - Root cause:
 - Fix:
 - How to avoid it next time:
 ```
 
-If the failure traces back to a `workflows/*.md` SOP being wrong, not just the tool's code, Builder updates that workflow too in the same fix. Exception: never create or overwrite a workflow without asking, unless explicitly told to.
+`Scope` is what makes this file machine-filterable — Reviewer reuses the task's exact `scope` from `PROGRESS.md`, by charter convention, so `get_context.py` can key an exact match instead of guessing from prose. If the failure traces to a `workflows/*.md` SOP, Builder fixes that too in the same pass (never overwrite a workflow without asking, otherwise).
 
-**Every subagent reads `memory.md` first**, at the start of its own invocation — the Lead Agent's prompt should say so explicitly each time, since a fresh subagent has no memory of prior sessions. User corrections get appended here too, same format.
-
----
+**Planner reads `memory.md` in full**, once, at plan time — the one deliberate full read, justified by Ground Rule 6/Model assignment. **Builder and Reviewer never read it directly** — they get their slice from `get_context.py <task-id>` (see CONTEXT RETRIEVAL below). User corrections get appended here too, same format, by Reviewer.
 
 ## PROGRESS.md — BUILD STATUS (full-WAT / UI projects only)
 
-Every subagent reads it right after `memory.md`, at the start of its own invocation. Written only by the Scribe subagent, only right after Reviewer passes a task — never by Planner or Builder.
+Builder and Reviewer get this via `get_context.py <task-id>` rather than reading the whole file. Line content is written once, at scaffold time, by the Lead Agent transcribing Planner's list; after that only `update_progress.py` flips the state marker — Builder to `in-progress`, Reviewer to `done` — never a direct hand-edit, never Planner.
 
-**States: `[ ]` pending · `[~]` in progress · `[x]` done and verified.** One line per task. Answers "where did we leave off" — not a changelog, not a place for reasoning (that's `memory.md`).
+**States: `[ ]` pending · `[~]` in progress · `[x]` done and verified.** Fixed line format so `get_context.py` can parse it reliably:
 
----
+```
+[ ] T5 (scope: auth, depends-on: T3) — Add login endpoint
+```
+
+`depends-on: none` when there's no dependency. Answers "where did we leave off" — not a changelog, not a place for reasoning (that's `memory.md`).
+
+## CONTEXT RETRIEVAL & STATE TOOLS
+
+**`tools/get_context.py <task-id>`** (optional `--include-archive`, also searches `archive.md`) — deterministic replacement for hand-summarizing `memory.md`; keys off `task-id` instead of a line number that will have shifted by read time. Steps: (1) look up `task-id` in `PROGRESS.md` — not found → clear error, exit non-zero, a bad handoff `task-id` is a real bug and must surface loudly; (2) extract that task's `scope`, print the raw `PROGRESS.md` line; (3) grep `memory.md` for matching `Scope:` entries — no match → explicit "no matching history for scope `<name>`", never silent empty output; (4) `--include-archive` also searches `archive.md`. Run by Builder/Reviewer as their first action (both already have `Bash`, no permission change needed); Planner doesn't use it. Full-WAT/UI only.
+
+**`tools/update_progress.py <task-id> in-progress`** — low-risk marker flip, informational, run by Builder right after `get_context.py`.
+
+**`tools/update_progress.py <task-id> done (--test-cmd "<command>" | --no-test)`** — the state that matters, what the Lead Agent trusts to mean the build is green. Never takes Reviewer's word for it: one of the two flags is required, and the script **re-runs the command itself** before writing anything — only a real exit 0 produced by its own execution flips `[x]`; a failing or missing command leaves `PROGRESS.md` untouched and exits non-zero. `--no-test` is explicit, never a silent default. Mirrors the rule Reviewer already applies to Builder ("verify the actual files, never trust what you were told"), applied back onto Reviewer's own claim of success. Run by Reviewer as its last action, only after independently passing the task.
+
+**`tools/validate_state.py`** — run by `init.py`'s pre-flight pass. Checks every `memory.md` entry has a `Scope:` line and every `PROGRESS.md` line matches the fixed format. A mismatch is a real bug (silently breaks `get_context.py`'s matching) — follows `init.py`'s **stop, don't continue, ask for help**, unlike the auto-archiving step below, which is a normal pass.
 
 ## init.py — PRE-FLIGHT CHECK
 
-Create `init.py`. `CLAUDE.md` must instruct running `python init.py` before any change; it verifies the folder/file structure exists (including `.claude/agents/`), required `.md` files are present and non-empty, and tests (if any) pass.
+`CLAUDE.md` must instruct running `python init.py` before any change. Verifies the folder/file structure exists (including `.claude/agents/`), required `.md` files are present and non-empty, tests pass, and — full-WAT/UI only — runs `validate_state.py`.
 
-If it fails: **stop, don't continue, ask for help.**
+If any of that fails: **stop, don't continue, ask for help.**
 
----
+**Auto-archiving** (full-WAT/UI only, `memory.md` keeps growing otherwise): if it exceeds ~15 entries, move the oldest to `archive.md` (create if needed) — except any entry whose `Scope:` matches a task still `[ ]`/`[~]` in `PROGRESS.md`, which stays regardless of age. A normal deterministic step, not a failure — runs silently as part of pre-flight. `archive.md` is never read by Builder/Reviewer in the normal flow, only via `get_context.py --include-archive`.
 
 ## SUBAGENT DEFINITION TEMPLATE
 
-Each `.claude/agents/<name>.md` follows this shape — fill in the role-specific system prompt from THE MULTI-AGENT MODEL above:
-
 ```markdown
 ---
-name: <planner|builder|reviewer|scribe>
+name: <planner|builder|reviewer>
 description: <one line — when the Lead Agent should invoke this subagent>
-model: <sonnet|haiku>
+model: <opus|sonnet>
 tools: <minimum tool set this role actually needs>
 ---
 
-<Role charter — what it does, what it must read first (memory.md, then PROGRESS.md),
-what it must verify from disk rather than trust from the handoff prompt, and what
-it hands back to the Lead Agent.>
+<Role charter: for Builder/Reviewer, first action is get_context.py <task-id>
+as complete starting context (Planner reads memory.md in full instead, once);
+which state script each role runs and when (Builder: in-progress; Reviewer:
+done, only after independently verifying the task); verify from disk, never
+trust the handoff prompt or a tool's output; what it hands back to the Lead
+Agent.>
 ```
 
-Minimum tool sets to propose (tighten further if the project needs less):
-
 - **planner** — read-only: `Read`, `Glob`, `Grep`. It plans, it doesn't touch files.
-- **builder** — `Read`, `Edit`, `Write`, `Glob`, `Grep`, `Bash` (to run tests it writes).
-- **reviewer** — `Read`, `Glob`, `Grep`, `Bash` (to run tests), `Edit` (memory.md only, by convention — state this restriction in its charter even though the tool grant can't enforce it).
-- **scribe** — `Read`, `Edit` (PROGRESS.md only, by convention, same caveat).
-
----
+- **builder** — `Read`, `Edit`, `Write`, `Glob`, `Grep`, `Bash` (tests, `get_context.py`/`update_progress.py`).
+- **reviewer** — `Read`, `Glob`, `Grep`, `Bash` (same), `Edit` (memory.md only, by convention — the tool grant can't enforce it, state the restriction in its charter).
 
 ## SKILLS & AGENTS CATALOG — ON DEMAND ONLY
 
-Distinct from this project's own `.claude/agents/` team above — this is pre-built external Skills and subagents. Two sources, checked in this order:
+Distinct from this project's own team above — pre-built external Skills/subagents, checked in order: (1) local catalog `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS` (`skills/<name>/SKILL.md` ~24 entries, `agents/<name>.md` ~14 entries — match by frontmatter description, glob/grep names first); (2) connected Anthropic Skills/MCP servers.
 
-1. **Local catalog** — `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`: `skills/<name>/SKILL.md` (~24 entries) and `agents/<name>.md` (~14 entries), e.g. database-architect, security-auditor, frontend-design. Match by scanning each candidate's frontmatter `description`; glob/grep names first, don't open every file.
-2. **Anthropic Skills / MCP servers** already connected.
+**When**: right after intake, in Phase 1, if Q1-Q4 point to a specialized domain (name the match, don't install yet); also on-demand whenever Planner/Builder hits a gap. **Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — never the whole catalog, never global. Name collision with the team's own three → rename the incoming file, don't overwrite a team subagent. Use only if it genuinely helps, never preload "just in case."
 
-**When**: right after intake, in Phase 1 — if Q1–Q4 point to a specialized domain, name the match in the structure proposal (don't install yet). Also on-demand whenever Planner/Builder hits a task needing expertise beyond existing `tools/`/team.
-
-**Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — `skills/<name>/` → `.claude/skills/<name>/`, `agents/<name>.md` → `.claude/agents/<name>.md`. Never the whole catalog, never global by default. If a catalog agent's name collides with the team's own four, rename the incoming file rather than overwriting a team subagent.
-
-Use only if it genuinely helps — never preload "just in case." Catalog items are optional specialists layered alongside the harness's own team, not a replacement for it.
-
-### Authoring a new subagent (catalog miss)
-
-If neither the fixed four nor a catalog/MCP match covers a task's need, the Lead Agent may author a new one — same gate as any file creation (Ground Rule 4): name the specific gap the team and catalog both leave, then wait for approval before writing it. Follow the SUBAGENT DEFINITION TEMPLATE above — one clear responsibility, minimum tool set, model tier chosen by Ground Rule 6's test (default sonnet; haiku only if the job is as mechanical as Scribe's; never opus by default). Whichever role hit the gap hands the Lead Agent a one-line need; the Lead Agent creates `.claude/agents/<name>.md`, adds it to `CLAUDE.md`'s subagent list (CLAUDE.md REQUIREMENTS below), and invokes it from then on like any other team member. Reuse it for later matching tasks instead of authoring a near-duplicate.
-
----
+**Authoring a new subagent (catalog miss)**: same approval gate as any file creation (Ground Rule 4) — name the specific gap, wait for approval before writing. Minimum tool set, model tier by Ground Rule 6's test (default sonnet, never opus by default). Purely mechanical, zero-judgment work → write a `tools/*.py` script instead of a subagent, that's the cheaper tier. Lead Agent creates `.claude/agents/<name>.md`, adds it to `CLAUDE.md`'s subagent list, reuses it for later matching tasks instead of authoring a near-duplicate.
 
 ## NON-MARKDOWN INPUT HANDLING (MarkItDown)
 
-Non-Markdown documents (PDF, DOCX, PPTX, XLSX) get converted to Markdown before being read — never raw bytes, never bespoke parsing code. Destination is always a subagent's context, not a human reader.
-
-**Tool**: [MarkItDown](https://github.com/microsoft/markitdown) (MIT, Microsoft).
+Non-Markdown docs (PDF/DOCX/PPTX/XLSX) get converted to Markdown before being read — never raw bytes, never bespoke parsing code.
 
 ```
 pip install 'markitdown[pdf,docx,pptx,xlsx]'   # scope to what Q4 actually needs
@@ -220,33 +188,25 @@ result = md.convert_local(input_path)   # convert_local only — never a URL
 Path(output_path).write_text(result.text_content, encoding="utf-8")
 ```
 
-**Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. Builder is the subagent that runs this tool, since it's the one doing implementation work. If the tool doesn't exist yet, Builder creates it now (SKILLS & AGENTS CATALOG above) instead of reading raw bytes.
-
----
+**Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. Builder runs it, creating the tool first if it doesn't exist yet.
 
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
-`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]` in `PROGRESS.md`) and, if so, commits — then pushes only if a remote is configured; no remote is not an error, it just skips the push. Requires git initialized (see GITHUB below, before the team starts task 1) but not necessarily a remote.
+`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]`) and, if so, commits — pushes only if a remote is configured (no remote isn't an error, just skips the push). Requires git initialized before the team starts task 1.
 
-Two triggers, one script:
-
-1. `Stop` hook, **merged into** `.claude/settings.json` — never overwrite an existing file, only add this hook entry — runs after every turn:
+1. `Stop` hook, **merged into** `.claude/settings.json` (never overwrite an existing file, only add this entry):
 
 ```json
 {
   "hooks": {
     "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "python tools/checkpoint.py" }
-        ]
-      }
+      { "hooks": [{ "type": "command", "command": "python tools/checkpoint.py" }] }
     ]
   }
 }
 ```
 
-2. Manual `/checkpoint` command, `.claude/commands/checkpoint.md`:
+2. Manual `.claude/commands/checkpoint.md`:
 
 ```markdown
 ---
@@ -256,34 +216,26 @@ description: Force a checkpoint now, without waiting for the Stop hook.
 Run `tools/checkpoint.py`; report what it committed, or that there was nothing to commit.
 ```
 
-This fires after the Scribe subagent's edit closes a task — a deterministic trigger, never a judgment call mid-task by any team member.
-
----
+Fires after Reviewer's `update_progress.py <task-id> done` call closes a task — a deterministic trigger, never a mid-task judgment call.
 
 ## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
 
-Once Phase 1's structure exists, initialize git **before the team starts task 1**. If this project has `tools/checkpoint.py`, its `Stop` hook needs a real, remote-configured repo from the first completed task on — initializing git later makes early checkpoints fail.
+Initialize git before the team starts task 1 — a `checkpoint.py` Stop hook needs a real, remote-configured repo from the first completed task on. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English; give the exact push commands if remote.
 
-- `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
-- Initialize git, first commit (English message), give the exact push commands if remote.
+## CLAUDE.md REQUIREMENTS
 
----
-
-## CLAUDE.md REQUIREMENTS (the trunk file you will write)
-
-The generated `CLAUDE.md` must, staying lean and referencing other files rather than inlining them:
+Staying lean, referencing other files rather than inlining them:
 
 - Instruct `python init.py` before any change; stop and ask if it fails.
-- Instruct every subagent to read `memory.md`, then `PROGRESS.md` (if it exists), at the start of its own invocation, in that order.
-- Describe the subagent team, list which model each is pinned to and why in one line each, and state the parallel-Builder gate.
-- State the language rule and the Skills/Agents/MCP on-demand rule, including the `CLAUDE-PLUGINS` catalog path.
-- If non-Markdown inputs are in play, restate the MarkItDown rule explicitly — this must hold every session, not just at scaffold time.
-- If this project has `workflows/`, state that Builder updates a workflow file when a failure traces back to the SOP itself, never overwriting one without asking first.
-- If `tools/checkpoint.py` exists, note commits happen deterministically via the `Stop` hook after Scribe closes a task — not a judgment call mid-task.
-- State ground rule 6 (never over-provision a model) explicitly, so a future session doesn't quietly bump a role's tier "to be safe."
-- `CLAUDE.md` is edited in place after scaffolding — not appended like `memory.md`, not status-tracked like `PROGRESS.md` — whenever a task adds a `.claude/agents/` file, a standing tool, a top-level folder, or a rule change (like MarkItDown or a model reassignment). Builder edits it in the same task, as a targeted addition, not a rewrite — push detail into the referenced file instead if it would break the 2-minute limit (Rule 5). Reviewer fails the task if the reference wasn't added.
-
----
+- Instruct Builder/Reviewer to run `get_context.py <task-id>` as their first action instead of reading `memory.md`/`PROGRESS.md` directly; Planner reads `memory.md` in full once, at plan time. Note auto-archiving past ~15 entries is automatic, not manual.
+- Instruct Builder to run `update_progress.py <task-id> in-progress` on start, and Reviewer `update_progress.py <task-id> done --test-cmd "..."` (or `--no-test`) only as its last action — the script re-verifies before writing, it doesn't trust the call.
+- Describe the team (Planner/Builder/Reviewer), model per role and why in one line each, the parallel-Builder gate, and the retry ladder's hard cap (3 fails on the same task → stop, ask the user).
+- State the language rule and the Skills/Agents/MCP on-demand rule, with the `CLAUDE-PLUGINS` catalog path.
+- If non-Markdown inputs are in play, restate the MarkItDown rule — must hold every session, not just at scaffold time.
+- If this project has `workflows/`, state Builder updates a workflow when a failure traces to the SOP itself, never overwriting one without asking first.
+- If `checkpoint.py` exists, note commits happen deterministically after Reviewer's `done` call closes a task — not a mid-task judgment call.
+- State Ground Rule 6 explicitly, so a future session doesn't quietly bump a tier "to be safe."
+- `CLAUDE.md` is edited in place after scaffolding (not appended like `memory.md`, not status-tracked like `PROGRESS.md`) whenever a task adds an agent file, a standing tool, a top-level folder, or a rule change. Builder edits it in the same task, targeted, not a rewrite — push detail into the referenced file if it would break the 2-minute limit. Reviewer fails the task if the reference wasn't added.
 
 ## START NOW
 
