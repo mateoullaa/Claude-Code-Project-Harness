@@ -93,7 +93,7 @@ Explain each file in one line, then wait for approval.
 
 ## THE MULTI-AGENT MODEL (parallel subagents, model-tiered)
 
-Four subagents, each a standalone `.claude/agents/<name>.md` file with its own frontmatter (`name`, `description`, `model`, `tools`) and system prompt. The Lead Agent (this conversation) never adopts their hats — it invokes them via the Agent tool and relays results.
+Four subagents, each a standalone `.claude/agents/<name>.md` file with its own frontmatter (`name`, `description`, `model`, `tools`) and system prompt. The Lead Agent (this conversation) never adopts their hats — it invokes them via the Agent tool and relays results. The team starts at these four; new ones can be authored later on a catalog miss (see SKILLS & AGENTS CATALOG below).
 
 Because subagents share no conversation memory, every invocation must be **self-contained**: pass the task description, the relevant slice of `memory.md`, and the current `PROGRESS.md` line in the prompt — and instruct each subagent to independently verify against the actual files on disk rather than trusting the handoff description.
 
@@ -193,6 +193,10 @@ Distinct from this project's own `.claude/agents/` team above — this is pre-bu
 **Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — `skills/<name>/` → `.claude/skills/<name>/`, `agents/<name>.md` → `.claude/agents/<name>.md`. Never the whole catalog, never global by default. If a catalog agent's name collides with the team's own four, rename the incoming file rather than overwriting a team subagent.
 
 Use only if it genuinely helps — never preload "just in case." Catalog items are optional specialists layered alongside the harness's own team, not a replacement for it.
+
+### Authoring a new subagent (catalog miss)
+
+If neither the fixed four nor a catalog/MCP match covers a task's need, the Lead Agent may author a new one — same gate as any file creation (Ground Rule 4): name the specific gap the team and catalog both leave, then wait for approval before writing it. Follow the SUBAGENT DEFINITION TEMPLATE above — one clear responsibility, minimum tool set, model tier chosen by Ground Rule 6's test (default sonnet; haiku only if the job is as mechanical as Scribe's; never opus by default). Whichever role hit the gap hands the Lead Agent a one-line need; the Lead Agent creates `.claude/agents/<name>.md`, adds it to `CLAUDE.md`'s subagent list (CLAUDE.md REQUIREMENTS below), and invokes it from then on like any other team member. Reuse it for later matching tasks instead of authoring a near-duplicate.
 
 ---
 
