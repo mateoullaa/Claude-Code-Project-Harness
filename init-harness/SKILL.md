@@ -65,7 +65,7 @@ Apply this even when a small project doesn't need all three folders — the sepa
 Pick footprint from Q2, propose it — don't create folders yet.
 
 - **Recurring automation / data pipeline** → full WAT (`workflows/`, `tools/`, `roles/`), plus `PROGRESS.md`, `roles/scribe.md`, `tools/checkpoint.py`, `.claude/settings.json`, and `.claude/commands/checkpoint.md`.
-- **One-off script or small tool** → lightweight: skip `workflows/` and the five files above — no build state worth tracking. Single role file, minimal `tools/` if needed.
+- **One-off script or small tool** → lightweight: skip `workflows/` and the five files above — no build state worth tracking. Single combined `roles/roles.md` file covering Planner/Builder/Reviewer (no Scribe) — full per-role separation only pays off at full-WAT/UI scale. Minimal `tools/` if needed.
 - **Tool with UI** → full WAT, plus all five files above, plus whatever frontend/backend the UI needs.
 
 Core file set to propose for approval:
@@ -75,7 +75,8 @@ CLAUDE.md                       # Trunk file, preloaded each session, lean.
 memory.md                       # Self-healing log, written by the review loop.
 PROGRESS.md                     # Build state tracker. Full-WAT/UI only.
 init.py                         # Pre-flight check. Multiplatform.
-roles/                          # planner / builder / reviewer / scribe*.
+roles/                          # full-WAT/UI: planner/builder/reviewer/scribe* as separate files.
+                                 # Lightweight: single roles/roles.md covering all three, no scribe.
 tools/convert_to_markdown.py    # Optional — only if Q4 has non-Markdown inputs.
 tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
 .claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only.
@@ -95,7 +96,7 @@ One Lead Agent adopts roles **sequentially**, reading the matching file in `role
 
 - **Planner** (`roles/planner.md`) — task list with success criteria. Self-audits before handoff on **scope** (cut anything not implied by intake), **coverage** (every checklist item maps to a task), and **sequencing** (real dependencies respected) — logs a pass/fail note naming anything cut.
 - **Builder** (`roles/builder.md`) — implements one task at a time, existing tools first; writes the test for a task's success criterion when it's testable — Reviewer needs something concrete to check.
-- **Reviewer** (`roles/reviewer.md`) — runs at the end of each task, verifying output exists, tests pass, contract/schema is met. Fails → correction loop, lesson to `memory.md`, no advance. Passes → full-WAT/UI hands off to Scribe; lightweight logs its own one-line pass note and advances.
+- **Reviewer** (`roles/reviewer.md`) — runs at the end of each task, verifying output exists, tests pass, contract/schema is met. Fails → correction loop, lesson to `memory.md`, no advance. Passes → full-WAT/UI hands off to Scribe; lightweight states its own one-line pass note directly in its response and advances — nothing to persist, there's no `PROGRESS.md` to update.
 - **Scribe** (`roles/scribe.md`, full-WAT/UI only) — runs right after Reviewer passes, updating `PROGRESS.md` markers only — never judges correctness, never touches `memory.md`. Keep this file to a few lines.
 
 ---
@@ -138,7 +139,7 @@ If it fails: **stop, don't continue, ask for help.**
 
 Distinct from your own `tools/` folder (WAT PRINCIPLE above) — this is pre-built external Skills and subagents. Two sources, checked in this order:
 
-1. **Local catalog** — `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`: `skills/<name>/SKILL.md` (~24 entries) and `agents/<name>.md` (~14 entries), e.g. database-architect, security-auditor, frontend-design. Match by scanning each candidate's frontmatter `description`; glob/grep names first, don't open every file.
+1. **Local catalog** — `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`: `skills/<name>/SKILL.md` (dozens of entries) and `agents/<name>.md` (~14 entries), e.g. database-architect, security-auditor, frontend-design. Match by scanning each candidate's frontmatter `description`; glob/grep names first, don't open every file.
 2. **Anthropic Skills / MCP servers** already connected.
 
 **When**: right after intake, in Phase 1 — if Q1–Q4 point to a specialized domain, name the match in the structure proposal (don't install yet). Also on-demand whenever Planner/Builder hits a task needing expertise beyond existing `tools/`/`roles/`.
@@ -209,7 +210,7 @@ Run `tools/checkpoint.py`; report what it committed, or that there was nothing t
 
 ## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
 
-Once Phase 1's structure exists, initialize git **before Builder starts task 1**. If this project has `tools/checkpoint.py`, its `Stop` hook needs a real, remote-configured repo from the first completed task on — initializing git later makes early checkpoints fail.
+Once Phase 1's structure exists, initialize git **before Builder starts task 1**. If this project has `tools/checkpoint.py`, its `Stop` hook needs git initialized from the first completed task on — a remote is optional (see AUTOMATED CHECKPOINTING), but initializing git *itself* later makes early checkpoints fail with nothing to commit into.
 
 - `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
 - Initialize git, first commit (English message), give the exact push commands if remote.

@@ -43,7 +43,7 @@ Applies even when a small project doesn't need all three folders — the separat
 ## PHASE 1 — PROPOSE THE STRUCTURE (after intake, before building)
 
 - **Recurring automation / data pipeline** → full WAT (`workflows/`, `tools/`, `.claude/agents/`) + `PROGRESS.md`, `tools/checkpoint.py`, `.claude/settings.json`, `.claude/commands/checkpoint.md`.
-- **One-off script or small tool** → skip `workflows/` and those five — no build state worth tracking. Still use Builder/Reviewer subagents.
+- **One-off script or small tool** → skip `workflows/` and those five — no build state worth tracking. Still use Planner once (plan + self-audit) and Builder/Reviewer subagents per task.
 - **Tool with UI** → full WAT + all five + whatever frontend/backend the UI needs.
 
 ```
@@ -108,7 +108,7 @@ Q6 API billing → note in the proposal that tiering also cuts dollar cost. Q6 s
 
 `Scope` is what makes this file machine-filterable — Reviewer reuses the task's exact `scope` from `PROGRESS.md`, by charter convention, so `get_context.py` can key an exact match instead of guessing from prose. If the failure traces to a `workflows/*.md` SOP, Builder fixes that too in the same pass (never overwrite a workflow without asking, otherwise).
 
-**Planner reads `memory.md` in full**, once, at plan time — the one deliberate full read, justified by Ground Rule 6/Model assignment. **Builder and Reviewer never read it directly** — they get their slice from `get_context.py <task-id>` (see CONTEXT RETRIEVAL below). User corrections get appended here too, same format, by Reviewer.
+**Planner reads `memory.md` in full**, once, at plan time — the one deliberate full read, justified by Ground Rule 6/Model assignment. **Builder and Reviewer never read it directly** on full-WAT/UI projects — they get their slice from `get_context.py <task-id>` (see CONTEXT RETRIEVAL below). On lightweight projects (no `get_context.py`), Builder and Reviewer read `memory.md` directly, in full, at the start of each task invocation instead — same file, same rule ("verify from the source"), just no deterministic tool standing in front of it at that scale. Not a one-time read at project start: every task invocation re-reads it, since a lesson from task 2's failure must be visible to task 5's Builder even without `get_context.py` to key it by scope. User corrections get appended here too, same format, by Reviewer.
 
 ## PROGRESS.md — BUILD STATUS (full-WAT / UI projects only)
 
@@ -151,8 +151,10 @@ tools: <minimum tool set this role actually needs>
 ---
 
 <Role charter: for Builder/Reviewer, first action is get_context.py <task-id>
-as complete starting context (Planner reads memory.md in full instead, once);
-which state script each role runs and when (Builder: in-progress; Reviewer:
+on full-WAT/UI, or reading memory.md directly, in full, at the start of every
+task invocation, on lightweight (Planner reads memory.md in full instead,
+once, on either footprint); which state script each role runs and when
+(Builder: in-progress; Reviewer:
 done, only after independently verifying the task); verify from disk, never
 trust the handoff prompt or a tool's output; what it hands back to the Lead
 Agent.>
@@ -164,7 +166,7 @@ Agent.>
 
 ## SKILLS & AGENTS CATALOG — ON DEMAND ONLY
 
-Distinct from this project's own team above — pre-built external Skills/subagents, checked in order: (1) local catalog `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS` (`skills/<name>/SKILL.md` ~24 entries, `agents/<name>.md` ~14 entries — match by frontmatter description, glob/grep names first); (2) connected Anthropic Skills/MCP servers.
+Distinct from this project's own team above — pre-built external Skills/subagents, checked in order: (1) local catalog `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS` (`skills/<name>/SKILL.md` dozens of entries, `agents/<name>.md` ~14 entries — match by frontmatter description, glob/grep names first); (2) connected Anthropic Skills/MCP servers.
 
 **When**: right after intake, in Phase 1, if Q1-Q4 point to a specialized domain (name the match, don't install yet); also on-demand whenever Planner/Builder hits a gap. **Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — never the whole catalog, never global. Name collision with the team's own three → rename the incoming file, don't overwrite a team subagent. Use only if it genuinely helps, never preload "just in case."
 
@@ -192,7 +194,7 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
-`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]`) and, if so, commits — pushes only if a remote is configured (no remote isn't an error, just skips the push). Requires git initialized before the team starts task 1.
+`tools/checkpoint.py` checks for a real change — an uncommitted `git diff` against the last commit whose content includes a task newly marked `[x]` in `PROGRESS.md` — and, if so, commits — pushes only if a remote is configured (no remote isn't an error, just skips the push). Requires git initialized before the team starts task 1.
 
 1. `Stop` hook, **merged into** `.claude/settings.json` (never overwrite an existing file, only add this entry):
 
@@ -220,14 +222,14 @@ Fires after Reviewer's `update_progress.py <task-id> done` call closes a task �
 
 ## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
 
-Initialize git before the team starts task 1 — a `checkpoint.py` Stop hook needs a real, remote-configured repo from the first completed task on. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English; give the exact push commands if remote.
+Initialize git before the team starts task 1 — git itself, not a remote (see AUTOMATED CHECKPOINTING), is what `checkpoint.py`'s `Stop` hook needs from the first completed task on; initializing git later makes early checkpoints fail with nothing to commit into. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English; give the exact push commands if remote.
 
 ## CLAUDE.md REQUIREMENTS
 
 Staying lean, referencing other files rather than inlining them:
 
 - Instruct `python init.py` before any change; stop and ask if it fails.
-- Instruct Builder/Reviewer to run `get_context.py <task-id>` as their first action instead of reading `memory.md`/`PROGRESS.md` directly; Planner reads `memory.md` in full once, at plan time. Note auto-archiving past ~15 entries is automatic, not manual.
+- Instruct Builder/Reviewer to run `get_context.py <task-id>` as their first action instead of reading `memory.md`/`PROGRESS.md` directly; Planner reads `memory.md` in full once, at plan time. On lightweight projects (no `get_context.py`), state that Builder/Reviewer read `memory.md` directly, in full, at the start of every task invocation — not just once per project. Note auto-archiving past ~15 entries is automatic, not manual.
 - Instruct Builder to run `update_progress.py <task-id> in-progress` on start, and Reviewer `update_progress.py <task-id> done --test-cmd "..."` (or `--no-test`) only as its last action — the script re-verifies before writing, it doesn't trust the call.
 - Describe the team (Planner/Builder/Reviewer), model per role and why in one line each, the parallel-Builder gate, and the retry ladder's hard cap (3 fails on the same task → stop, ask the user).
 - State the language rule and the Skills/Agents/MCP on-demand rule, with the `CLAUDE-PLUGINS` catalog path.
