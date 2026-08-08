@@ -139,7 +139,7 @@ If it fails: **stop, don't continue, ask for help.**
 
 Distinct from your own `tools/` folder (WAT PRINCIPLE above) — this is pre-built external Skills and subagents. Two sources, checked in this order:
 
-1. **Local catalog** — `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`: `skills/<name>/SKILL.md` (dozens of entries) and `agents/<name>.md` (~14 entries), e.g. database-architect, security-auditor, frontend-design. Match by scanning each candidate's frontmatter `description`; glob/grep names first, don't open every file.
+1. **Local catalog** — [Claude-Plugins](https://github.com/mateoullaa/Claude-Plugins). **Resolve the path, first hit wins, never guess one**: (a) `$CLAUDE_PLUGINS_DIR`; (b) walking up from this project, the first ancestor holding `AI-Agency/CLAUDE-PLUGINS`; (c) `%OneDrive%\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`; (d) `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`. Mount point and Windows user differ across the machines this runs on — if nothing resolves, say so and skip the catalog instead of inventing a path. Inside it: `skills/<name>/SKILL.md` (dozens of entries) and `agents/<name>.md` (~14 entries), e.g. database-architect, security-auditor, frontend-design. Match by scanning each candidate's frontmatter `description`; glob/grep names first, don't open every file.
 2. **Anthropic Skills / MCP servers** already connected.
 
 **When**: right after intake, in Phase 1 — if Q1–Q4 point to a specialized domain, name the match in the structure proposal (don't install yet). Also on-demand whenever Planner/Builder hits a task needing expertise beyond existing `tools/`/`roles/`.
@@ -224,7 +224,7 @@ The generated `CLAUDE.md` must, staying lean and referencing other files rather 
 - Instruct `python init.py` before any change; stop and ask if it fails.
 - Instruct reading `memory.md`, then `PROGRESS.md` (if it exists), at session start, in that order.
 - Describe the role model and when each runs, including Scribe if `PROGRESS.md` exists.
-- State the language rule and the Skills/Agents/MCP on-demand rule, including the `CLAUDE-PLUGINS` catalog path.
+- State the language rule and the Skills/Agents/MCP on-demand rule. Record the catalog path **as resolved on this machine**, and note the resolution order next to it so a session on another machine can re-resolve instead of trusting a stale absolute path.
 - If non-Markdown inputs are in play, restate the MarkItDown rule explicitly — this must hold every session, not just at scaffold time.
 - If this project has `workflows/`, state that Builder updates a workflow file when a failure traces back to the SOP itself, never overwriting one without asking first.
 - If `tools/checkpoint.py` exists, note commits happen deterministically via the `Stop` hook after Reviewer/Scribe close a task — not a judgment call mid-task.

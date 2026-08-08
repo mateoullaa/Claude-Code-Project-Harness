@@ -166,7 +166,9 @@ Agent.>
 
 ## SKILLS & AGENTS CATALOG — ON DEMAND ONLY
 
-Distinct from this project's own team above — pre-built external Skills/subagents, checked in order: (1) local catalog `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS` (`skills/<name>/SKILL.md` dozens of entries, `agents/<name>.md` ~14 entries — match by frontmatter description, glob/grep names first); (2) connected Anthropic Skills/MCP servers.
+Distinct from this project's own team above — pre-built external Skills/subagents, checked in order: (1) local catalog [Claude-Plugins](https://github.com/mateoullaa/Claude-Plugins) (`skills/<name>/SKILL.md` dozens of entries, `agents/<name>.md` ~14 entries — match by frontmatter description, glob/grep names first); (2) connected Anthropic Skills/MCP servers.
+
+**Resolve the catalog path, first hit wins, never guess one**: (a) `$CLAUDE_PLUGINS_DIR`; (b) walking up from this project, the first ancestor holding `AI-Agency/CLAUDE-PLUGINS`; (c) `%OneDrive%\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`; (d) `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`. Mount point and Windows user differ across the machines this runs on — if nothing resolves, say so and skip the catalog instead of inventing a path.
 
 **When**: right after intake, in Phase 1, if Q1-Q4 point to a specialized domain (name the match, don't install yet); also on-demand whenever Planner/Builder hits a gap. **Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — never the whole catalog, never global. Name collision with the team's own three → rename the incoming file, don't overwrite a team subagent. Use only if it genuinely helps, never preload "just in case."
 
@@ -232,7 +234,7 @@ Staying lean, referencing other files rather than inlining them:
 - Instruct Builder/Reviewer to run `get_context.py <task-id>` as their first action instead of reading `memory.md`/`PROGRESS.md` directly; Planner reads `memory.md` in full once, at plan time. On lightweight projects (no `get_context.py`), state that Builder/Reviewer read `memory.md` directly, in full, at the start of every task invocation — not just once per project. Note auto-archiving past ~15 entries is automatic, not manual.
 - Instruct Builder to run `update_progress.py <task-id> in-progress` on start, and Reviewer `update_progress.py <task-id> done --test-cmd "..."` (or `--no-test`) only as its last action — the script re-verifies before writing, it doesn't trust the call.
 - Describe the team (Planner/Builder/Reviewer), model per role and why in one line each, the parallel-Builder gate, and the retry ladder's hard cap (3 fails on the same task → stop, ask the user).
-- State the language rule and the Skills/Agents/MCP on-demand rule, with the `CLAUDE-PLUGINS` catalog path.
+- State the language rule and the Skills/Agents/MCP on-demand rule. Record the catalog path **as resolved on this machine**, and note the resolution order next to it so a session on another machine can re-resolve instead of trusting a stale absolute path.
 - If non-Markdown inputs are in play, restate the MarkItDown rule — must hold every session, not just at scaffold time.
 - If this project has `workflows/`, state Builder updates a workflow when a failure traces to the SOP itself, never overwriting one without asking first.
 - If `checkpoint.py` exists, note commits happen deterministically after Reviewer's `done` call closes a task — not a mid-task judgment call.
