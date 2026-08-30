@@ -243,4 +243,4 @@ The generated `CLAUDE.md` must, staying lean and referencing other files rather 
 
 ## START NOW
 
-Begin Phase 0. Ask question 1 in Spanish. Don't create any file until the plan is approved.
+Run PRE-FLIGHT first — the `cwd` guard, then the `BRIEF.md` check. Only once that's clear, begin Phase 0: ask question 1 in Spanish, or confirm the brief's pre-filled answer to it. Don't create any file until the plan is approved.
