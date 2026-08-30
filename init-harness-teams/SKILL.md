@@ -2,6 +2,7 @@
 name: init-harness-teams
 description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured harness built on real parallel subagents instead of one Lead Agent switching roles — Planner/Builder/Reviewer as isolated .claude/agents/*.md subagents (build-state tracked by a deterministic script, not a fourth subagent), each pinned to a model tier chosen to conserve subscription quota, plus the same WAT-based file structure, test-driven self-improvement loop, and mandatory intake with a conditional clarify gate. Trigger on the same phrases as init-harness ('start a new project') when the user explicitly asks for subagent orchestration or wants roles split across models to save quota. Do not trigger for one-off scripts or existing-code fixes."
 argument-hint: "[optional: one-line description of what you want to build]"
+disable-model-invocation: true
 ---
 
 # Project Harness Initialization — Subagent Variant
