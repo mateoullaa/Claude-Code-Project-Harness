@@ -236,7 +236,7 @@ The generated `CLAUDE.md` must, staying lean and referencing other files rather 
 - State the language rule and the Skills/Agents/MCP on-demand rule. Record the catalog path **as resolved on this machine**, and note the resolution order next to it so a session on another machine can re-resolve instead of trusting a stale absolute path.
 - If non-Markdown inputs are in play, restate the MarkItDown rule explicitly — this must hold every session, not just at scaffold time.
 - If this project has `workflows/`, state that Builder updates a workflow file when a failure traces back to the SOP itself, never overwriting one without asking first.
-- If `tools/checkpoint.py` exists, note commits happen deterministically via the `Stop` hook after Reviewer/Scribe close a task — not a judgment call mid-task.
+- If `tools/checkpoint.py` exists, note the `Stop` hook runs once per turn, after every response — `checkpoint.py` is what makes it a no-op unless a task actually moved to `[x]` in `PROGRESS.md`.
 - `CLAUDE.md` is edited in place after scaffolding — not appended like `memory.md`, not status-tracked like `PROGRESS.md` — whenever a task adds a `roles/` file, a standing tool, a top-level folder, or a rule change (like MarkItDown). Builder edits it in the same task, as a targeted addition, not a rewrite — push detail into the referenced file instead if it would break the 2-minute limit (Rule 5). Reviewer fails the task if the reference wasn't added.
 
 ---
