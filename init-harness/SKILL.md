@@ -137,7 +137,7 @@ Read right after `memory.md`, at the start of every session. Written only by Scr
 
 ## init.py — PRE-FLIGHT CHECK
 
-Create `init.py`. `CLAUDE.md` must instruct running `python init.py` before any change; it verifies the folder/file structure exists, `CLAUDE.md` is present and non-empty, `memory.md`/`PROGRESS.md` (if they exist) are present — they start empty and only the review loop fills them, so don't require non-empty — and tests (if any) pass.
+Create `init.py`. `CLAUDE.md` must instruct running `python init.py` before any change; it verifies the folder/file structure exists, `CLAUDE.md` is present and non-empty, `memory.md` is present — empty is fine, only the review loop fills it — `PROGRESS.md` is present on full-WAT/UI (skip that check entirely on lightweight, where the file never exists), and tests (if any) pass.
 
 If it fails: **stop, don't continue, ask for help.**
 

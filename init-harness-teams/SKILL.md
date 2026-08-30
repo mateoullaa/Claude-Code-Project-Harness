@@ -140,7 +140,7 @@ Builder and Reviewer get this via `get_context.py <task-id>` rather than reading
 
 ## init.py — PRE-FLIGHT CHECK
 
-`CLAUDE.md` must instruct running `python init.py` before any change. Verifies the folder/file structure exists (including `.claude/agents/`), `CLAUDE.md` is present and non-empty, `memory.md`/`PROGRESS.md` (if they exist) are present — they start empty and only Reviewer fills them, so don't require non-empty — tests (if any) pass, and — full-WAT/UI only — runs `validate_state.py`.
+`CLAUDE.md` must instruct running `python init.py` before any change. Verifies the folder/file structure exists (including `.claude/agents/`), `CLAUDE.md` is present and non-empty, `memory.md` is present — empty is fine, only Reviewer fills it — `PROGRESS.md` is present on full-WAT/UI (skip that check entirely on lightweight, where the file never exists), tests (if any) pass, and — full-WAT/UI only — runs `validate_state.py`.
 
 If any of that fails: **stop, don't continue, ask for help.**
 
