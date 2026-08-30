@@ -201,9 +201,13 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 
 **Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. Builder runs it, creating the tool first if it doesn't exist yet.
 
+## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
+
+Initialize git before the team starts task 1 — and before `.claude/settings.json` gets a `Stop` hook wired to `checkpoint.py` (see AUTOMATED CHECKPOINTING below): that hook needs git initialized from the first completed task on, and initializing git later makes early checkpoints fail with nothing to commit into. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English; give the exact push commands if remote.
+
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
-`tools/checkpoint.py` checks for a real change — an uncommitted `git diff` against the last commit whose content includes a task newly marked `[x]` in `PROGRESS.md` — and, if so, commits — pushes only if a remote is configured (no remote isn't an error, just skips the push). Requires git initialized before the team starts task 1.
+`tools/checkpoint.py` checks for a real change — an uncommitted `git diff` against the last commit whose content includes a task newly marked `[x]` in `PROGRESS.md` — and, if so, commits — pushes only if a remote is configured (no remote isn't an error, just skips the push). Requires git initialized (see GITHUB above).
 
 1. `Stop` hook, **merged into** `.claude/settings.json` (never overwrite an existing file, only add this entry):
 
@@ -228,10 +232,6 @@ Run `tools/checkpoint.py`; report what it committed, or that there was nothing t
 ```
 
 The `Stop` hook runs when the Lead Agent finishes responding — once per turn, not on subagent completion (that's `SubagentStop`). `checkpoint.py` is what makes it a no-op unless a task actually moved to `[x]`.
-
-## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
-
-Initialize git before the team starts task 1 — git itself, not a remote (see AUTOMATED CHECKPOINTING), is what `checkpoint.py`'s `Stop` hook needs from the first completed task on; initializing git later makes early checkpoints fail with nothing to commit into. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English; give the exact push commands if remote.
 
 ## CLAUDE.md REQUIREMENTS
 

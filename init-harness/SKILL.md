@@ -183,9 +183,18 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 
 ---
 
+## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
+
+Once Phase 1's structure exists, initialize git **before Builder starts task 1** — and before `.claude/settings.json` gets a `Stop` hook wired to `checkpoint.py` (see AUTOMATED CHECKPOINTING below): that hook needs git initialized from the first completed task on, and initializing git *itself* later makes early checkpoints fail with nothing to commit into.
+
+- `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
+- Initialize git, first commit (English message), give the exact push commands if remote.
+
+---
+
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
-`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]` in `PROGRESS.md`) and, if so, commits — then pushes only if a remote is configured; no remote is not an error, it just skips the push. Requires git initialized (see GITHUB below, before Builder starts task 1) but not necessarily a remote.
+`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]` in `PROGRESS.md`) and, if so, commits — then pushes only if a remote is configured; no remote is not an error, it just skips the push. Requires git initialized (see GITHUB above) but not necessarily a remote.
 
 Two triggers, one script:
 
@@ -214,15 +223,6 @@ description: Force a checkpoint now, without waiting for the Stop hook.
 
 Run `tools/checkpoint.py`; report what it committed, or that there was nothing to commit.
 ```
-
----
-
-## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
-
-Once Phase 1's structure exists, initialize git **before Builder starts task 1**. If this project has `tools/checkpoint.py`, its `Stop` hook needs git initialized from the first completed task on — a remote is optional (see AUTOMATED CHECKPOINTING), but initializing git *itself* later makes early checkpoints fail with nothing to commit into.
-
-- `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
-- Initialize git, first commit (English message), give the exact push commands if remote.
 
 ---
 
