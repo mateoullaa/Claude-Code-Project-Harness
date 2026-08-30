@@ -227,7 +227,7 @@ description: Force a checkpoint now, without waiting for the Stop hook.
 Run `tools/checkpoint.py`; report what it committed, or that there was nothing to commit.
 ```
 
-Fires after Reviewer's `update_progress.py <task-id> done` call closes a task — a deterministic trigger, never a mid-task judgment call.
+The `Stop` hook runs when the Lead Agent finishes responding — once per turn, not on subagent completion (that's `SubagentStop`). `checkpoint.py` is what makes it a no-op unless a task actually moved to `[x]`.
 
 ## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
 
@@ -244,7 +244,7 @@ Staying lean, referencing other files rather than inlining them:
 - State the language rule and the Skills/Agents/MCP on-demand rule. Record the catalog path **as resolved on this machine**, and note the resolution order next to it so a session on another machine can re-resolve instead of trusting a stale absolute path.
 - If non-Markdown inputs are in play, restate the MarkItDown rule — must hold every session, not just at scaffold time.
 - If this project has `workflows/`, state Builder updates a workflow when a failure traces to the SOP itself, never overwriting one without asking first.
-- If `checkpoint.py` exists, note commits happen deterministically after Reviewer's `done` call closes a task — not a mid-task judgment call.
+- If `checkpoint.py` exists, note the `Stop` hook runs once per turn (not on subagent completion — that's `SubagentStop`), and `checkpoint.py` is what makes it a no-op unless a task actually moved to `[x]`.
 - State Ground Rule 6 explicitly, so a future session doesn't quietly bump a tier "to be safe."
 - `CLAUDE.md` is edited in place after scaffolding (not appended like `memory.md`, not status-tracked like `PROGRESS.md`) whenever a task adds an agent file, a standing tool, a top-level folder, or a rule change. Builder edits it in the same task, targeted, not a rewrite — push detail into the referenced file if it would break the 2-minute limit. Reviewer fails the task if the reference wasn't added.
 
