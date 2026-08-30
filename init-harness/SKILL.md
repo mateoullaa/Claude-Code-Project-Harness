@@ -20,6 +20,12 @@ You are the **Lead Agent** of an AI harness being built in this folder. Before w
 
 ---
 
+## PRE-FLIGHT (before question 1)
+
+Check for `BRIEF.md` in the project root. If present, read it in full and use it to pre-fill the six intake answers below — confirm each one instead of re-asking; treat `SIN DEFINIR` as a genuine open question and ask it from scratch.
+
+---
+
 ## PHASE 0 — INTAKE (one question at a time, in Spanish)
 
 Ask these six, one by one, confirming each before the next. "I don't know" → proposal mode (rule 3).

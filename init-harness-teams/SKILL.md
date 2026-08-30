@@ -17,6 +17,10 @@ Lead Agent orchestrating Planner/Builder/Reviewer as isolated subagents, each pi
 5. **Every file readable in ~2 minutes.** One responsibility per file, split if it grows past that; `CLAUDE.md` loads every session, keep it leanest of all.
 6. **Never over-provision a model.** Ask "does this task need this much reasoning?", not "would more help." Escalate only on demonstrated failure, except Planner's one-time Opus default (see MODEL ASSIGNMENT).
 
+## PRE-FLIGHT (before question 1)
+
+Check for `BRIEF.md` in the project root. If present, read it in full and use it to pre-fill the six intake answers below — confirm each one instead of re-asking; treat `SIN DEFINIR` as a genuine open question and ask it from scratch.
+
 ## PHASE 0 — INTAKE (one question at a time, in Spanish)
 
 1. **Objective** — what it does, for whom.
