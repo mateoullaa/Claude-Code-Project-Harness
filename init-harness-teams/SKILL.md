@@ -96,7 +96,7 @@ Q6 API billing → note in the proposal that tiering also cuts dollar cost. Q6 s
 
 1. **Planner** runs once: task list with success criteria, a stable `task-id`, a `scope: <name>` tag (e.g. `auth`, `pipeline`, `ui`), and `depends-on: <task-id>|none`. Lead Agent transcribes this into the initial `PROGRESS.md` (Planner is read-only, never writes files). Same scope vocabulary carries into that task's later memory.md entries. Logs a pass/fail self-audit naming anything cut (coverage, sequencing).
 2. **Builder** runs once per task. After `get_context.py`, on full-WAT/UI runs `python tools/update_progress.py <task-id> in-progress`. Implements, existing tools first; **writes the test for the task's success criterion when it's testable** — Reviewer needs something concrete to check. `depends-on` tasks wait for their dependency's Reviewer pass; `none` tasks may fan out as **parallel Builder calls in the same turn**. **Gate**: ask the user before the first parallel fan-out — concurrent Sonnet calls draw down the shared usage window faster in a burst than the same tokens spent sequentially.
-3. **Reviewer** always runs one call at a time, even when Builder fanned out — never parallelize it, concurrent writers to `memory.md` would race. Verifies each Builder output in turn, sole writer to `memory.md`.
+3. **Reviewer** always runs one call at a time, even when Builder fanned out — never parallelize it, concurrent writers to `memory.md` would race. Verifies each Builder output in turn — a task passes only when the declared output exists on disk, its test exits 0, and the stated contract/schema is met — sole writer to `memory.md`.
 4. Fail → correction loop (Retry ladder above): the concrete failure goes in the next Builder prompt, Builder fixes it (never re-running a paid call without asking first), Reviewer re-verifies.
 5. Pass, full-WAT/UI → Reviewer's **last action**: `python tools/update_progress.py <task-id> done --test-cmd "<command>"` (or `--no-test` only if genuinely untestable). The script re-runs that command itself and only writes `[x]` on a real exit 0 — Reviewer's own claim is never enough by itself, the same rule Reviewer already applies to Builder. Lightweight (no `PROGRESS.md`) skips this, Lead Agent just advances.
 
@@ -162,9 +162,10 @@ on full-WAT/UI, or reading memory.md directly, in full, at the start of every
 task invocation, on lightweight (Planner reads memory.md in full instead,
 once, on either footprint); which state script each role runs and when
 (Builder: in-progress; Reviewer:
-done, only after independently verifying the task); verify from disk, never
-trust the handoff prompt or a tool's output; what it hands back to the Lead
-Agent.>
+done, only after independently verifying the task — a pass means the
+declared output exists on disk, its test exits 0, and the stated
+contract/schema is met); verify from disk, never trust the handoff prompt
+or a tool's output; what it hands back to the Lead Agent.>
 ```
 
 - **planner** — read-only: `Read`, `Glob`, `Grep`. It plans, it doesn't touch files.
