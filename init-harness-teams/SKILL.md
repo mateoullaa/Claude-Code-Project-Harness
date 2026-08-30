@@ -50,7 +50,7 @@ Applies even when a small project doesn't need all three folders — the separat
 ## PHASE 1 — PROPOSE THE STRUCTURE (after intake, before building)
 
 - **Recurring automation / data pipeline** → full WAT (`workflows/`, `tools/`, `.claude/agents/`) + `PROGRESS.md`, `tools/checkpoint.py`, `.claude/settings.json`, `.claude/commands/checkpoint.md`.
-- **One-off script or small tool** → skip `workflows/` and those five — no build state worth tracking. Still use Planner once (plan + self-audit) and Builder/Reviewer subagents per task.
+- **One-off script or small tool** → skip `workflows/` and everything marked Full-WAT/UI only in the tree below — no build state worth tracking. Still use Planner once (plan + self-audit) and Builder/Reviewer subagents per task.
 - **Tool with UI** → full WAT + all five + whatever frontend/backend the UI needs.
 
 ```
