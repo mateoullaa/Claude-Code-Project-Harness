@@ -78,7 +78,7 @@ Explain each file in one line, then wait for approval.
 
 Three subagents, each a standalone `.claude/agents/<name>.md` with its own frontmatter (`name`, `description`, `model`, `tools`) and system prompt. The Lead Agent never adopts their hats — it invokes via the Agent tool and relays results. New ones can be authored later on a catalog miss (see SKILLS & AGENTS CATALOG below).
 
-Subagents share no conversation memory, so every invocation must be self-contained — but the Lead Agent must never hand-summarize `memory.md` into the prompt (that's a judgment call the WAT principle says belongs in a tool, not in reasoning). It passes only the task description and stable `task-id`; Builder and Reviewer's first action is running `python tools/get_context.py <task-id>` themselves and treating its output as complete starting context. Every subagent still verifies against the actual files on disk rather than trusting the handoff.
+Subagents share no conversation memory, so every invocation must be self-contained — but the Lead Agent must never hand-summarize `memory.md` into the prompt (that's a judgment call the WAT principle says belongs in a tool, not in reasoning). It passes only the task description and stable `task-id`; Builder and Reviewer's first action is running `python tools/get_context.py <task-id>` themselves and treating its output as complete starting context — full-WAT/UI only; on lightweight projects there is no `get_context.py`, so Builder and Reviewer read `memory.md` directly instead (see THE SELF-IMPROVEMENT LOOP below). Every subagent still verifies against the actual files on disk rather than trusting the handoff.
 
 ### Model assignment
 
