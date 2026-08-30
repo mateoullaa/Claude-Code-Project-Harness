@@ -66,8 +66,8 @@ tools/update_progress.py        # Flips PROGRESS.md state; re-verifies before wr
 tools/validate_state.py         # Format-consistency check, run by init.py pre-flight. Full-WAT/UI only.
 tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
 archive.md                      # Archived memory.md entries, size-triggered. Full-WAT/UI only, on demand.
-.claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only.
-.claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only.
+.claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only — created last, after git init (see GITHUB).
+.claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only — created after git init too.
 .gitignore                      # Created at the GitHub step.
 ```
 
@@ -201,9 +201,9 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 
 **Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. Builder runs it, creating the tool first if it doesn't exist yet.
 
-## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
+## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE `.claude/settings.json` EXISTS
 
-Initialize git before the team starts task 1 — and before `.claude/settings.json` gets a `Stop` hook wired to `checkpoint.py` (see AUTOMATED CHECKPOINTING below): that hook needs git initialized from the first completed task on, and initializing git later makes early checkpoints fail with nothing to commit into. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English; give the exact push commands if remote.
+Scaffold everything except `.claude/settings.json` and `.claude/commands/checkpoint.md` — hold those two back. Initialize git before the team starts task 1 and before creating either of those two files: `.claude/settings.json` wires a `Stop` hook to `checkpoint.py` (see AUTOMATED CHECKPOINTING below), and that hook fires on the very next turn — a repo that doesn't exist yet makes the first checkpoint fail with nothing to commit into. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English, everything scaffolded so far; give the exact push commands if remote. Only after this commit: create `.claude/settings.json` and `.claude/commands/checkpoint.md` — the last two files of the scaffold, never before git exists.
 
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 

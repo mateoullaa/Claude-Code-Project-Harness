@@ -87,8 +87,8 @@ roles/                          # full-WAT/UI: planner/builder/reviewer/scribe* 
                                  # Lightweight: single roles/roles.md covering all three, no scribe.
 tools/convert_to_markdown.py    # Optional — only if Q4 has non-Markdown inputs.
 tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
-.claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only.
-.claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only.
+.claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only — created last, after git init (see GITHUB).
+.claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only — created after git init too.
 .gitignore                      # Created at the GitHub step.
 ```
 
@@ -182,12 +182,13 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 
 ---
 
-## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
+## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE `.claude/settings.json` EXISTS
 
-Once Phase 1's structure exists, initialize git **before Builder starts task 1** — and before `.claude/settings.json` gets a `Stop` hook wired to `checkpoint.py` (see AUTOMATED CHECKPOINTING below): that hook needs git initialized from the first completed task on, and initializing git *itself* later makes early checkpoints fail with nothing to commit into.
+Once Phase 1's structure exists **except `.claude/settings.json` and `.claude/commands/checkpoint.md`** — hold those two back — initialize git **before Builder starts task 1** and before creating either of those two files: `.claude/settings.json` wires a `Stop` hook to `checkpoint.py` (see AUTOMATED CHECKPOINTING below), and that hook fires on the very next turn — a repo that doesn't exist yet makes the first checkpoint fail with nothing to commit into.
 
 - `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
-- Initialize git, first commit (English message), give the exact push commands if remote.
+- Initialize git, first commit everything scaffolded so far (English message), give the exact push commands if remote.
+- Only after this commit: create `.claude/settings.json` and `.claude/commands/checkpoint.md` (see AUTOMATED CHECKPOINTING below) — the last two files of the scaffold, never before git exists.
 
 ---
 
