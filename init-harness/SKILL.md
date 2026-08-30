@@ -22,7 +22,9 @@ You are the **Lead Agent** of an AI harness being built in this folder. Before w
 
 ## PRE-FLIGHT (before question 1)
 
-Check for `BRIEF.md` in the project root. If present, read it in full and use it to pre-fill the six intake answers below — confirm each one instead of re-asking; treat `SIN DEFINIR` as a genuine open question and ask it from scratch.
+Before anything else: if `cwd` already contains a `CLAUDE.md`, a populated `tools/`, or a `.git` with commit history, **stop and ask** — this skill scaffolds into an empty project root and you are probably in the wrong folder.
+
+Then check for `BRIEF.md` in the project root. If present, read it in full and use it to pre-fill the six intake answers below — confirm each one instead of re-asking; treat `SIN DEFINIR` as a genuine open question and ask it from scratch.
 
 ---
 
