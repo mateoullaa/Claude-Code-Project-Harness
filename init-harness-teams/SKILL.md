@@ -5,45 +5,39 @@ description: "Use this skill when starting a brand-new coding project and the us
 
 # Project Harness Initialization — Subagent Variant
 
+**Shares its foundation with `init-harness`.** Before continuing here, read
+`~/.claude/skills/init-harness/SKILL.md` in full — its GROUND RULES 1-5, PHASE 0 INTAKE (six
+questions, clarify gate, requirements checklist), THE WAT PRINCIPLE's Workflows/Tools layers,
+SKILLS & AGENTS CATALOG's path resolution, NON-MARKDOWN INPUT HANDLING, GITHUB, and AUTOMATED
+CHECKPOINTING's JSON hook and command file apply here **verbatim** unless this file says
+otherwise. Everything below is this variant's delta: what changes because Planner/Builder/Reviewer
+run as isolated subagents, each on its own model tier, instead of one Lead Agent switching roles.
+
 Lead Agent orchestrating Planner/Builder/Reviewer as isolated subagents, each pinned to a model tier; build-state tracking (`PROGRESS.md`) is a deterministic script, not a fourth subagent. Interview the user before writing a file. If `$ARGUMENTS` was given, treat it as an answer to Question 1 and confirm it rather than re-asking.
 
-## GROUND RULES (permanent for this project)
+## GROUND RULES DELTA
 
-1. **Spanish to the user, English in every artifact.** Code, `.md` files, commits, subagent definitions — always English; never Spanish in an artifact, never English to the user.
-2. **Ask, don't assume.** One question at a time, wait for the answer.
-3. **Unsure user → propose 2-3 approaches with trade-offs**, wait for their choice — never pick architecture for them.
-4. **No file before plan approval.** Intake → plan → approval → scaffold.
-5. **Every file readable in ~2 minutes.** One responsibility per file, split if it grows past that; `CLAUDE.md` loads every session, keep it leanest of all.
+Adds one rule to `init-harness`'s 1-5:
+
 6. **Never over-provision a model.** Ask "does this task need this much reasoning?", not "would more help." Escalate only on demonstrated failure, except Planner's one-time Opus default (see MODEL ASSIGNMENT).
 
 ## PRE-FLIGHT (before question 1)
+
+Duplicated here verbatim, not referenced — this guard has to be unmissable before any other action, not one hop away in another file:
 
 Before anything else: if `cwd` already contains a `CLAUDE.md`, a populated `tools/`, or a `.git` with commit history, **stop and ask** — this skill scaffolds into an empty project root and you are probably in the wrong folder.
 
 Then check for `BRIEF.md` in the project root. If present, read it in full and use it to pre-fill the six intake answers below — confirm each one instead of re-asking; treat `SIN DEFINIR` as a genuine open question and ask it from scratch.
 
-## PHASE 0 — INTAKE (one question at a time, in Spanish)
+## PHASE 0 — INTAKE DELTA
 
-1. **Objective** — what it does, for whom.
-2. **Type** — one-off script, recurring automation, or tool with a UI.
-3. **Stack** — propose 2 options with trade-offs if unsure.
-4. **I/O** — expected inputs and outputs.
-5. **Success criterion** — concrete, testable.
+Same six questions, clarify gate, and requirements checklist as `init-harness`. Only difference — Q6 also asks subscription vs. API billing:
+
 6. **Constraints** — paid APIs, credentials, limits; ask subscription vs. API billing here — decides whether tiering saves quota or dollars.
 
-**Clarify gate**: trigger if Q2 is "recurring automation"/"tool with UI", or any answer allows two contradictory implementations. Up to 5 follow-ups, one at a time, on the ambiguous areas only.
+## THE WAT PRINCIPLE DELTA
 
-**Requirements checklist** (any unchecked item blocks Phase 1): Completeness — all 6 answered concretely · Clarity — no answer allows two implementations · Consistency — the stack (Q3) can produce the I/O (Q4) · Testability — the success criterion (Q5) is checkable.
-
-## THE WAT PRINCIPLE
-
-**Probabilistic AI handles reasoning; deterministic code handles execution.** Chained agent-improvised steps compound error — push execution into scripts so agents stay focused on orchestration.
-
-- **Workflows** — SOPs in `workflows/`: objective, inputs, tools, outputs, edge cases.
-- **Agents** — the subagent team below, each reading the relevant workflow first.
-- **Tools** — Python scripts in `tools/`; check for an existing one before writing a new one. Secrets only in `.env`.
-
-Applies even when a small project doesn't need all three folders — the separation is the point, not the folder count. Phase 1 decides how much to instantiate.
+Same doctrine, Workflows layer, and Tools layer as `init-harness`. Only "Agents" means something different here: not a single Lead Agent, but **the subagent team below** (THE MULTI-AGENT MODEL), each reading the relevant workflow first.
 
 ## PHASE 1 — PROPOSE THE STRUCTURE (after intake, before building)
 
@@ -172,7 +166,7 @@ or a tool's output; what it hands back to the Lead Agent.>
 
 Distinct from this project's own team above — pre-built external Skills/subagents, checked in order: (1) local catalog [Claude-Plugins](https://github.com/mateoullaa/Claude-Plugins) (`skills/<name>/SKILL.md` dozens of entries, `agents/<name>.md` ~14 entries — match by frontmatter description, glob/grep names first); (2) connected Anthropic Skills/MCP servers.
 
-**Resolve the catalog path, first hit wins, never guess one**: (a) `$CLAUDE_PLUGINS_DIR`; (b) walking up from this project, the first ancestor holding `AI-Agency/CLAUDE-PLUGINS`; (c) `%OneDrive%\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`; (d) `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`. Mount point and Windows user differ across the machines this runs on — if nothing resolves, say so and skip the catalog instead of inventing a path.
+**Resolve the catalog path** exactly as `init-harness`'s SKILLS & AGENTS CATALOG section does — same four candidates, first hit wins, never guess one.
 
 **When**: right after intake, in Phase 1, if Q1-Q4 point to a specialized domain (name the match, don't install yet) — if `BRIEF.md` already carried a shortlist, use it as the starting point instead of re-searching the catalog, just confirm it still fits; also on-demand whenever Planner/Builder hits a gap. **Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — never the whole catalog, never global. Name collision with the team's own three → rename the incoming file, don't overwrite a team subagent. Use only if it genuinely helps, never preload "just in case."
 
@@ -180,53 +174,15 @@ Distinct from this project's own team above — pre-built external Skills/subage
 
 ## NON-MARKDOWN INPUT HANDLING (MarkItDown)
 
-Non-Markdown docs (PDF/DOCX/PPTX/XLSX) get converted to Markdown before being read — never raw bytes, never bespoke parsing code.
-
-```
-pip install 'markitdown[pdf,docx,pptx,xlsx]'   # scope to what Q4 actually needs
-```
-
-Wrap as `tools/convert_to_markdown.py`, never called inline:
-
-```python
-from markitdown import MarkItDown
-from pathlib import Path
-md = MarkItDown(enable_plugins=False)
-result = md.convert_local(input_path)   # convert_local only — never a URL
-Path(output_path).write_text(result.text_content, encoding="utf-8")
-```
-
-**Trigger**: any non-Markdown file, any time — declared at Q4 or dropped in later. Builder runs it, creating the tool first if it doesn't exist yet.
+Same tool, same `pip install`, same `tools/convert_to_markdown.py` wrapper as `init-harness`'s NON-MARKDOWN INPUT HANDLING section — copy that content verbatim. Only difference: **Trigger** — Builder runs it, creating the tool first if it doesn't exist yet (not "you", since Builder is the subagent that touches files here).
 
 ## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE `.claude/settings.json` EXISTS
 
-Scaffold everything except `.claude/settings.json` and `.claude/commands/checkpoint.md` — hold those two back. Initialize git before the team starts task 1 and before creating either of those two files: `.claude/settings.json` wires a `Stop` hook to `checkpoint.py` (see AUTOMATED CHECKPOINTING below), and that hook fires on the very next turn — a repo that doesn't exist yet makes the first checkpoint fail with nothing to commit into. `.gitignore` excludes `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure). First commit in English, everything scaffolded so far; give the exact push commands if remote. Only after this commit: create `.claude/settings.json` and `.claude/commands/checkpoint.md` — the last two files of the scaffold, never before git exists.
+Same as `init-harness`'s GITHUB section — hold `.claude/settings.json` and `.claude/commands/checkpoint.md` back, `git init` and the first commit happen before either exists, then they're the last two files of the scaffold. Only difference: "Builder starts task 1" there means "the team starts task 1" here.
 
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
-`tools/checkpoint.py` checks for a real change — an uncommitted `git diff` against the last commit whose content includes a task newly marked `[x]` in `PROGRESS.md` — and, if so, commits — pushes only if a remote is configured (no remote isn't an error, just skips the push). Requires git initialized (see GITHUB above).
-
-1. `Stop` hook, **merged into** `.claude/settings.json` (never overwrite an existing file, only add this entry):
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      { "hooks": [{ "type": "command", "command": "python tools/checkpoint.py" }] }
-    ]
-  }
-}
-```
-
-2. Manual `.claude/commands/checkpoint.md`:
-
-```markdown
----
-description: Force a checkpoint now, without waiting for the Stop hook.
----
-
-Run `tools/checkpoint.py`; report what it committed, or that there was nothing to commit.
-```
+Same `checkpoint.py` behavior, `Stop` hook JSON, and manual command file as `init-harness`'s AUTOMATED CHECKPOINTING section — copy that content verbatim; requires git initialized (see GITHUB above).
 
 The `Stop` hook runs when the Lead Agent finishes responding — once per turn, not on subagent completion (that's `SubagentStop`). `checkpoint.py` is what makes it a no-op unless a task actually moved to `[x]`.
 
@@ -246,5 +202,7 @@ Staying lean, referencing other files rather than inlining them:
 - `CLAUDE.md` is edited in place after scaffolding (not appended like `memory.md`, not status-tracked like `PROGRESS.md`) whenever a task adds an agent file, a standing tool, a top-level folder, or a rule change. Builder edits it in the same task, targeted, not a rewrite — push detail into the referenced file if it would break the 2-minute limit. Reviewer fails the task if the reference wasn't added.
 
 ## START NOW
+
+Duplicated here verbatim, not referenced — this is the final trigger and has to be unmissable:
 
 Run PRE-FLIGHT first — the `cwd` guard, then the `BRIEF.md` check. Only once that's clear, begin Phase 0: ask question 1 in Spanish, or confirm the brief's pre-filled answer to it. Don't create any file until the plan is approved.
