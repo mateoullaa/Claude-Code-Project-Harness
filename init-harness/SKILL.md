@@ -1,7 +1,6 @@
 ---
 name: init-harness
 description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured, self-improving harness before writing any code — a WAT-based file structure (workflows/tools/roles), sequential Planner/Builder/Reviewer/Scribe roles, a test-driven self-improvement loop written to memory.md, and a mandatory intake with a conditional clarify gate and requirements checklist. Trigger when cwd is the root of a new, empty project folder — typically with a BRIEF.md present, no CLAUDE.md yet — and the user wants a project scaffolded here, e.g. 'start a new project'. Do NOT trigger if cwd already has a CLAUDE.md, a populated tools/, or a .git with commit history — that's an existing project, not a fresh scaffold target; the nuevo-proyecto skill handles 'I want to build X' routed from inside an existing repo like the Executive Assistant. Do not trigger on requests to just write a script or fix existing code — this is for project initialization only."
-argument-hint: "[optional: one-line description of what you want to build]"
 ---
 
 # Project Harness Initialization
