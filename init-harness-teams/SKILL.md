@@ -29,7 +29,7 @@ Then check for `BRIEF.md` in the project root. If present, read it in full and u
 3. **Stack** — propose 2 options with trade-offs if unsure.
 4. **I/O** — expected inputs and outputs.
 5. **Success criterion** — concrete, testable.
-6. **Constraints** — paid APIs, credentials, limits; ask subscription vs. API billing here — decides whether tiering saves quota or dollars (see MODEL ASSIGNMENT).
+6. **Constraints** — paid APIs, credentials, limits; ask subscription vs. API billing here — decides whether tiering saves quota or dollars.
 
 **Clarify gate**: trigger if Q2 is "recurring automation"/"tool with UI", or any answer allows two contradictory implementations. Up to 5 follow-ups, one at a time, on the ambiguous areas only.
 
@@ -87,8 +87,6 @@ Subagents share no conversation memory, so every invocation must be self-contain
 | Reviewer | sonnet | once per task          | Sole gate before memory.md/PROGRESS.md. |
 
 **Retry ladder, same task** — no unbounded loop: fail once → Builder retries with the concrete failure in its prompt. Fail twice in a row → Lead Agent may ask the user for one-off permission to re-run that call on Opus (never bump a default tier without asking). Fail three times → **STOP**, no further automatic retries, ask the user for manual intervention.
-
-Q6 API billing → note in the proposal that tiering also cuts dollar cost. Q6 subscription → note it stretches the shared usage window instead.
 
 ### Orchestration flow
 

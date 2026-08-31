@@ -57,7 +57,7 @@ Any unchecked item blocks Phase 1.
 
 ## THE WAT PRINCIPLE
 
-**Probabilistic AI handles reasoning; deterministic code handles execution.** Five agent-improvised steps at 90% each compound to ~59% success — push execution into scripts so the agent stays focused on orchestration. Three layers:
+**Probabilistic AI handles reasoning; deterministic code handles execution.** Chained agent-improvised steps compound error — push execution into scripts so the agent stays focused on orchestration. Three layers:
 
 - **Workflows** — markdown SOPs in `workflows/`: objective, inputs, tools, outputs, edge cases.
 - **Agents** — you. Read the workflow, run tools in order, ask when unsure.
@@ -151,9 +151,7 @@ Distinct from your own `tools/` folder (WAT PRINCIPLE above) — this is pre-bui
 
 **When**: right after intake, in Phase 1 — if Q1–Q4 point to a specialized domain, name the match in the structure proposal (don't install yet). If `BRIEF.md` already carried a shortlist, use it as the starting point — confirm it still fits, don't re-search the catalog from scratch. Also on-demand whenever Planner/Builder hits a task needing expertise beyond existing `tools/`/`roles/`.
 
-**Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — `skills/<name>/` → `.claude/skills/<name>/`, `agents/<name>.md` → `.claude/agents/<name>.md`. Never the whole catalog, never global by default.
-
-Use only if it genuinely helps — never preload "just in case." Catalog items are optional specialists layered on the harness's own sequential role model (MULTI-ROLE MODEL above), not a replacement for it.
+**Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — `skills/<name>/` → `.claude/skills/<name>/`, `agents/<name>.md` → `.claude/agents/<name>.md`. Never the whole catalog, never global by default, never "just in case" — only when it genuinely helps. Catalog items are optional specialists layered on the harness's own sequential role model (MULTI-ROLE MODEL above), not a replacement for it.
 
 ---
 
