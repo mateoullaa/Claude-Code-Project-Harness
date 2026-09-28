@@ -1,7 +1,6 @@
 ---
 name: init-harness
-description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured, self-improving harness before writing any code — a WAT-based file structure (workflows/tools/roles), sequential Planner/Builder/Reviewer/Scribe roles, a test-driven self-improvement loop written to memory.md, and a mandatory intake with a conditional clarify gate and requirements checklist. Trigger on phrases like 'start a new project' or an empty/near-empty project folder with no CLAUDE.md yet. Do not trigger on requests to just write a script or fix existing code — this is for project initialization only."
-argument-hint: "[optional: one-line description of what you want to build]"
+description: "Use this skill when starting a brand-new coding project and the user wants Claude Code to scaffold a structured, self-improving harness before writing any code — a WAT-based file structure (workflows/tools/roles), sequential Planner/Builder/Reviewer/Scribe roles, a test-driven self-improvement loop written to memory.md, and a mandatory intake with a conditional clarify gate and requirements checklist. Trigger when cwd is the root of a new, empty project folder — typically with a BRIEF.md present, no CLAUDE.md yet — and the user wants a project scaffolded here, e.g. 'start a new project'. Do NOT trigger if cwd already has a CLAUDE.md, a populated tools/, or a .git with commit history — that's an existing project, not a fresh scaffold target; the nuevo-proyecto skill handles 'I want to build X' routed from inside an existing repo like the Executive Assistant. Do not trigger on requests to just write a script or fix existing code — this is for project initialization only."
 ---
 
 # Project Harness Initialization
@@ -17,6 +16,14 @@ You are the **Lead Agent** of an AI harness being built in this folder. Before w
 3. **Unsure user → propose.** Give 2–3 approaches with trade-offs, wait for their choice — never pick architecture for them.
 4. **No file before plan approval.** Intake → plan → approval → scaffold.
 5. **Every file readable in ~2 minutes.** One responsibility per file, split if it grows past that. `CLAUDE.md` loads every session — keep it leanest of all.
+
+---
+
+## PRE-FLIGHT (before question 1)
+
+Before anything else: if `cwd` already contains a `CLAUDE.md`, a populated `tools/`, or a `.git` with commit history, **stop and ask** — this skill scaffolds into an empty project root and you are probably in the wrong folder.
+
+Then check for `BRIEF.md` in the project root. If present, read it in full and use it to pre-fill the six intake answers below — confirm each one instead of re-asking; treat `SIN DEFINIR` as a genuine open question and ask it from scratch.
 
 ---
 
@@ -50,7 +57,7 @@ Any unchecked item blocks Phase 1.
 
 ## THE WAT PRINCIPLE
 
-**Probabilistic AI handles reasoning; deterministic code handles execution.** Five agent-improvised steps at 90% each compound to ~59% success — push execution into scripts so the agent stays focused on orchestration. Three layers:
+**Probabilistic AI handles reasoning; deterministic code handles execution.** Chained agent-improvised steps compound error — push execution into scripts so the agent stays focused on orchestration. Three layers:
 
 - **Workflows** — markdown SOPs in `workflows/`: objective, inputs, tools, outputs, edge cases.
 - **Agents** — you. Read the workflow, run tools in order, ask when unsure.
@@ -79,8 +86,8 @@ roles/                          # full-WAT/UI: planner/builder/reviewer/scribe* 
                                  # Lightweight: single roles/roles.md covering all three, no scribe.
 tools/convert_to_markdown.py    # Optional — only if Q4 has non-Markdown inputs.
 tools/checkpoint.py             # Commits + pushes. Full-WAT/UI only.
-.claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only.
-.claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only.
+.claude/settings.json           # Stop hook wiring for checkpoint.py. Full-WAT/UI only — created last, after git init (see GITHUB).
+.claude/commands/checkpoint.md  # Manual /checkpoint entry point. Full-WAT/UI only — created after git init too.
 .gitignore                      # Created at the GitHub step.
 ```
 
@@ -129,7 +136,7 @@ Read right after `memory.md`, at the start of every session. Written only by Scr
 
 ## init.py — PRE-FLIGHT CHECK
 
-Create `init.py`. `CLAUDE.md` must instruct running `python init.py` before any change; it verifies the folder/file structure exists, required `.md` files are present and non-empty, and tests (if any) pass.
+Create `init.py`. `CLAUDE.md` must instruct running `python init.py` before any change; it verifies the folder/file structure exists, `CLAUDE.md` is present and non-empty, `memory.md` is present — empty is fine, only the review loop fills it — `PROGRESS.md` is present on full-WAT/UI (skip that check entirely on lightweight, where the file never exists), and tests (if any) pass.
 
 If it fails: **stop, don't continue, ask for help.**
 
@@ -142,11 +149,9 @@ Distinct from your own `tools/` folder (WAT PRINCIPLE above) — this is pre-bui
 1. **Local catalog** — [Claude-Plugins](https://github.com/mateoullaa/Claude-Plugins). **Resolve the path, first hit wins, never guess one**: (a) `$CLAUDE_PLUGINS_DIR`; (b) walking up from this project, the first ancestor holding `AI-Agency/CLAUDE-PLUGINS`; (c) `%OneDrive%\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`; (d) `D:\PROYECTOS CLAUDE\AI-Agency\CLAUDE-PLUGINS`. Mount point and Windows user differ across the machines this runs on — if nothing resolves, say so and skip the catalog instead of inventing a path. Inside it: `skills/<name>/SKILL.md` (dozens of entries) and `agents/<name>.md` (~14 entries), e.g. database-architect, security-auditor, frontend-design. Match by scanning each candidate's frontmatter `description`; glob/grep names first, don't open every file.
 2. **Anthropic Skills / MCP servers** already connected.
 
-**When**: right after intake, in Phase 1 — if Q1–Q4 point to a specialized domain, name the match in the structure proposal (don't install yet). Also on-demand whenever Planner/Builder hits a task needing expertise beyond existing `tools/`/`roles/`.
+**When**: right after intake, in Phase 1 — if Q1–Q4 point to a specialized domain, name the match in the structure proposal (don't install yet). If `BRIEF.md` already carried a shortlist, use it as the starting point — confirm it still fits, don't re-search the catalog from scratch. Also on-demand whenever Planner/Builder hits a task needing expertise beyond existing `tools/`/`roles/`.
 
-**Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — `skills/<name>/` → `.claude/skills/<name>/`, `agents/<name>.md` → `.claude/agents/<name>.md`. Never the whole catalog, never global by default.
-
-Use only if it genuinely helps — never preload "just in case." Catalog items are optional specialists layered on the harness's own sequential role model (MULTI-ROLE MODEL above), not a replacement for it.
+**Installing** (after approval, same gate as any file creation): copy only the matched item, project-scoped — `skills/<name>/` → `.claude/skills/<name>/`, `agents/<name>.md` → `.claude/agents/<name>.md`. Never the whole catalog, never global by default, never "just in case" — only when it genuinely helps. Catalog items are optional specialists layered on the harness's own sequential role model (MULTI-ROLE MODEL above), not a replacement for it.
 
 ---
 
@@ -174,9 +179,19 @@ Path(output_path).write_text(result.text_content, encoding="utf-8")
 
 ---
 
+## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE `.claude/settings.json` EXISTS
+
+Once Phase 1's structure exists **except `.claude/settings.json` and `.claude/commands/checkpoint.md`** — hold those two back — initialize git **before Builder starts task 1** and before creating either of those two files: `.claude/settings.json` wires a `Stop` hook to `checkpoint.py` (see AUTOMATED CHECKPOINTING below), and that hook fires on the very next turn — a repo that doesn't exist yet makes the first checkpoint fail with nothing to commit into.
+
+- `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
+- Initialize git, first commit everything scaffolded so far (English message), give the exact push commands if remote.
+- Only after this commit: create `.claude/settings.json` and `.claude/commands/checkpoint.md` (see AUTOMATED CHECKPOINTING below) — the last two files of the scaffold, never before git exists.
+
+---
+
 ## AUTOMATED CHECKPOINTING (full-WAT / UI projects only)
 
-`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]` in `PROGRESS.md`) and, if so, commits — then pushes only if a remote is configured; no remote is not an error, it just skips the push. Requires git initialized (see GITHUB below, before Builder starts task 1) but not necessarily a remote.
+`tools/checkpoint.py` checks for a real change (git diff + a task that just moved to `[x]` in `PROGRESS.md`) and, if so, commits — then pushes only if a remote is configured; no remote is not an error, it just skips the push. Requires git initialized (see GITHUB above) but not necessarily a remote.
 
 Two triggers, one script:
 
@@ -208,15 +223,6 @@ Run `tools/checkpoint.py`; report what it committed, or that there was nothing t
 
 ---
 
-## GITHUB — RIGHT AFTER SCAFFOLDING, BEFORE ANY TASK WORK
-
-Once Phase 1's structure exists, initialize git **before Builder starts task 1**. If this project has `tools/checkpoint.py`, its `Stop` hook needs git initialized from the first completed task on — a remote is optional (see AUTOMATED CHECKPOINTING), but initializing git *itself* later makes early checkpoints fail with nothing to commit into.
-
-- `.gitignore` excluding `.env`, credentials, `token.json`, `.tmp/`, and any sensitive `memory.md` content (ask if unsure).
-- Initialize git, first commit (English message), give the exact push commands if remote.
-
----
-
 ## CLAUDE.md REQUIREMENTS
 
 The generated `CLAUDE.md` must, staying lean and referencing other files rather than inlining them:
@@ -227,11 +233,11 @@ The generated `CLAUDE.md` must, staying lean and referencing other files rather 
 - State the language rule and the Skills/Agents/MCP on-demand rule. Record the catalog path **as resolved on this machine**, and note the resolution order next to it so a session on another machine can re-resolve instead of trusting a stale absolute path.
 - If non-Markdown inputs are in play, restate the MarkItDown rule explicitly — this must hold every session, not just at scaffold time.
 - If this project has `workflows/`, state that Builder updates a workflow file when a failure traces back to the SOP itself, never overwriting one without asking first.
-- If `tools/checkpoint.py` exists, note commits happen deterministically via the `Stop` hook after Reviewer/Scribe close a task — not a judgment call mid-task.
+- If `tools/checkpoint.py` exists, note the `Stop` hook runs once per turn, after every response — `checkpoint.py` is what makes it a no-op unless a task actually moved to `[x]` in `PROGRESS.md`.
 - `CLAUDE.md` is edited in place after scaffolding — not appended like `memory.md`, not status-tracked like `PROGRESS.md` — whenever a task adds a `roles/` file, a standing tool, a top-level folder, or a rule change (like MarkItDown). Builder edits it in the same task, as a targeted addition, not a rewrite — push detail into the referenced file instead if it would break the 2-minute limit (Rule 5). Reviewer fails the task if the reference wasn't added.
 
 ---
 
 ## START NOW
 
-Begin Phase 0. Ask question 1 in Spanish. Don't create any file until the plan is approved.
+Run PRE-FLIGHT first — the `cwd` guard, then the `BRIEF.md` check. Only once that's clear, begin Phase 0: ask question 1 in Spanish, or confirm the brief's pre-filled answer to it. Don't create any file until the plan is approved.
