@@ -9,7 +9,12 @@ decisions made in the abstract.
 
 ## Unreleased
 
-Nothing yet.
+### Conversation language: Spanish → English (both skills)
+
+- **Decision:** Ground Rule 1 is now "English everywhere"; the Phase 0 intake asks in English.
+- **Why:** the user switched all agent conversations to English on 2026-10-01. Artifacts were
+  already English-only, so only the user-facing language changes.
+- **Replaced:** "Spanish to the user, English in every artifact."
 
 ---
 
